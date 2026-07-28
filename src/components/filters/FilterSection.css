@@ -1,0 +1,37 @@
+.filter-sidebar {
+  width: 280px;
+  flex: 0 0 280px;
+  background: #ffffff;
+  border: 1px solid #edeff7;
+  border-radius: 14px;
+  padding: 20px;
+  height: fit-content;
+  position: sticky;
+  top: 24px;
+}
+
+.filter-sidebar__header {
+  margin-bottom: 8px;
+}
+
+.filter-sidebar__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #10162f;
+}
+
+.filter-sidebar__label {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5b6178;
+}
+
+@media (max-width: 900px) {
+  .filter-sidebar {
+    width: 100%;
+    flex: 1 1 100%;
+    position: static;
+  }
+}

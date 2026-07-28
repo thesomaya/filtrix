@@ -1,0 +1,44 @@
+.filter-section {
+  border-bottom: 1px solid #edeff7;
+  padding: 16px 0;
+}
+
+.filter-section:first-child {
+  padding-top: 0;
+}
+
+.filter-section:last-child {
+  border-bottom: none;
+}
+
+.filter-section__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  padding: 0 0 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #10162f;
+  cursor: pointer;
+  text-align: left;
+}
+
+.filter-section__chevron {
+  font-size: 1.1rem;
+  color: #8a90a8;
+  transform: rotate(-90deg);
+  transition: transform 0.18s ease;
+}
+
+.filter-section__chevron--open {
+  transform: rotate(0deg);
+}
+
+.filter-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}

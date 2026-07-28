@@ -1,0 +1,78 @@
+.range-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.range-filter__values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #10162f;
+}
+
+.range-filter__track-wrap {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.range-filter__track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: #e6e9f2;
+}
+
+.range-filter__fill {
+  position: absolute;
+  height: 4px;
+  border-radius: 2px;
+  background: #3b5bff;
+}
+
+.range-filter__input {
+  position: absolute;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range-filter__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #3b5bff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.range-filter__input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #3b5bff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.range-filter__input::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.range-filter__input:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid #3b5bff;
+  outline-offset: 2px;
+}

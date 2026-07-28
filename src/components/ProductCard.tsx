@@ -1,16 +1,16 @@
 import "./ProductCard.css";
 
 export interface ProductCardProps {
-  image: string;
+  image?: string;
   title: string;
-  details: string[];
+  details?: string[];
   onClick?: () => void;
 }
 
 export default function ProductCard({
-  image,
+  image = "",
   title,
-  details,
+  details = [],
   onClick,
 }: ProductCardProps) {
   return (

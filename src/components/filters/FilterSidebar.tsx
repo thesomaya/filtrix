@@ -1,58 +1,140 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FilterSection from "./FilterSection";
 import CheckboxFilter from "./CheckboxFilter";
-import RadioFilter from "./RadioFilter";
 import RangeFilter from "./RangeFilter";
 import ToggleFilter from "./ToggleFilter";
 import "./FilterSidebar.css";
 
-const CERTIFICATIONS = [
-  "CE",
-  "FCC",
-  "RoHS",
-  "Emark",
-  "Anatel",
-  "Atex",
-  "IC",
-  "WEEE",
-  "EAC",
-  "TDRA",
-  "IP",
-  "PTCRB",
-  "CITC",
-  "UKCA",
-];
+export interface FilterOption {
+  value: string;
+  displayName: string;
+}
 
-const FIRMWARE_UPDATE_OPTIONS = ["Automatic", "Scheduled", "Manual"];
-const CASING_MATERIAL = ["Plastic", "Metal"];
-const CELLULAR_TECHNOLOGY = ["2G", "3G", "4G", "5G"];
+export interface FilterAttribute {
+  id: string;
+  slug: string;
+  name: string;
+  valueType: "text" | "number" | "boolean";
+  allowMultiple: boolean;
+  range: { min: number; max: number } | null;
+  options: FilterOption[];
+}
 
-export default function FilterSidebar() {
-  // 1. Storage
-  const [memorySize, setMemorySize] = useState<[number, number]>([0, 32000]);
-  const [dataCompression, setDataCompression] = useState(false);
-  const [externalMemorySlot, setExternalMemorySlot] = useState(false);
+export interface FilterGroup {
+  id: string;
+  name: string;
+  sortOrder: number;
+  attributes: FilterAttribute[];
+}
 
-  // 2. Warranty and Support
-  const [warranty, setWarranty] = useState<[number, number]>([0, 36]);
-  const [documentPortal, setDocumentPortal] = useState(false);
+// What gets sent to /products/search as `filters`
+export type FilterValues = Record<
+  string,
+  boolean | string[] | { min: number; max: number }
+>;
 
-  // 3. Certification
-  const [certifications, setCertifications] = useState<string[]>([]);
+export interface FilterSidebarProps {
+  onChange: (filters: FilterValues) => void;
+}
 
-  // 4. Device Management
-  const [firmwareUpdate, setFirmwareUpdate] = useState<string | null>(null);
+const API_BASE = "http://localhost:3000";
 
-  // 6. Physical
-  const [weight, setWeight] = useState<[number, number]>([0, 2000]);
-  const [casingMaterial, setCasingMaterial] = useState<string[]>([]);
+export default function FilterSidebar({ onChange }: FilterSidebarProps) {
+  const [groups, setGroups] = useState<FilterGroup[]>([]);
+  // UI-only state: what each slider currently shows (always a tuple)
+  const [rangeUi, setRangeUi] = useState<Record<string, [number, number]>>({});
+  // What actually gets sent to the backend
+  const [values, setValues] = useState<FilterValues>({});
+  const [loading, setLoading] = useState(true);
 
-  // 8. Electrical
-  const [solarPowered, setSolarPowered] = useState(false);
+  // Fetch every available filter once on mount
+  useEffect(() => {
+    let cancelled = false;
 
-  // 9. Connectivity
-  const [cellularTech, setCellularTech] = useState<string[]>([]);
-  const [wifi, setWifi] = useState(false);
+    async function loadFilters() {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/attribute-groups/search`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        const data: FilterGroup[] = await res.json();
+        if (!cancelled) setGroups(data);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadFilters();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const update = (slug: string, value: FilterValues[string]) => {
+    const next = { ...values, [slug]: value };
+    setValues(next);
+    onChange(next);
+  };
+
+  // Remove a filter key entirely (means "no constraint", not "match nothing")
+  const clear = (slug: string) => {
+    const next = { ...values };
+    delete next[slug];
+    setValues(next);
+    onChange(next);
+  };
+
+  const updateCheckbox = (slug: string, next: string[]) => {
+    if (next.length === 0) {
+      clear(slug);
+    } else {
+      update(slug, next);
+    }
+  };
+
+  const updateToggle = (slug: string, next: boolean) => {
+    if (next === false) {
+      clear(slug);
+    } else {
+      update(slug, next);
+    }
+  };
+
+  const updateRange = (
+    slug: string,
+    next: [number, number],
+    bounds: { min: number; max: number },
+  ) => {
+    setRangeUi((prev) => ({ ...prev, [slug]: next }));
+    const [low, high] = next;
+    if (low <= bounds.min && high >= bounds.max) {
+      // back to the full range no constraint
+      clear(slug);
+    } else {
+      update(slug, { min: low, max: high });
+    }
+  };
+
+  if (loading) {
+    return (
+      <aside className="filter-sidebar">
+        <p className="filter-sidebar__loading">Loading filters…</p>
+      </aside>
+    );
+  }
+
+  if (groups.length === 0) {
+    return (
+      <aside className="filter-sidebar">
+        <div className="filter-sidebar__header">
+          <h2 className="filter-sidebar__title">Filters</h2>
+        </div>
+        <p className="filter-sidebar__empty">No filters available yet.</p>
+      </aside>
+    );
+  }
 
   return (
     <aside className="filter-sidebar">
@@ -60,107 +142,54 @@ export default function FilterSidebar() {
         <h2 className="filter-sidebar__title">Filters</h2>
       </div>
 
-      <FilterSection title="Storage Specifications">
-        <div>
-          <p className="filter-sidebar__label">Internal Memory Size (MB)</p>
-          <RangeFilter
-            min={0}
-            max={32000}
-            unit=" MB"
-            value={memorySize}
-            onChange={setMemorySize}
-          />
-        </div>
-        <ToggleFilter
-          label="Data Compression"
-          checked={dataCompression}
-          onChange={setDataCompression}
-        />
-        <ToggleFilter
-          label="External Memory Slot"
-          checked={externalMemorySlot}
-          onChange={setExternalMemorySlot}
-        />
-      </FilterSection>
+      {groups.map((group) => (
+        <FilterSection key={group.id} title={group.name}>
+          {group.attributes.map((attr) => {
+            const current = values[attr.slug];
 
-      <FilterSection title="Warranty and Support">
-        <div>
-          <p className="filter-sidebar__label">Warranty (months, min.)</p>
-          <RangeFilter
-            min={0}
-            max={36}
-            unit=" mo"
-            value={warranty}
-            onChange={setWarranty}
-          />
-        </div>
-        <ToggleFilter
-          label="Document Portal"
-          checked={documentPortal}
-          onChange={setDocumentPortal}
-        />
-      </FilterSection>
+            if (attr.valueType === "boolean") {
+              return (
+                <ToggleFilter
+                  key={attr.slug}
+                  label={attr.name}
+                  checked={Boolean(current)}
+                  onChange={(next) => updateToggle(attr.slug, next)}
+                />
+              );
+            }
 
-      <FilterSection title="Certification and Compliance">
-        <CheckboxFilter
-          options={CERTIFICATIONS}
-          selected={certifications}
-          onChange={setCertifications}
-        />
-      </FilterSection>
+            if (attr.valueType === "number" && attr.range) {
+              const value = rangeUi[attr.slug] ?? [attr.range.min, attr.range.max];
+              return (
+                <div key={attr.slug}>
+                  <p className="filter-sidebar__label">{attr.name}</p>
+                  <RangeFilter
+                    min={attr.range.min}
+                    max={attr.range.max}
+                    value={value}
+                    onChange={(next) => updateRange(attr.slug, next, attr.range!)}
+                  />
+                </div>
+              );
+            }
 
-      <FilterSection title="Device Management">
-        <div>
-          <p className="filter-sidebar__label">Firmware Update Options</p>
-          <RadioFilter
-            name="firmware-update"
-            options={FIRMWARE_UPDATE_OPTIONS}
-            selected={firmwareUpdate}
-            onChange={setFirmwareUpdate}
-          />
-        </div>
-      </FilterSection>
-
-      <FilterSection title="Physical Specification">
-        <div>
-          <p className="filter-sidebar__label">Weight (g)</p>
-          <RangeFilter
-            min={0}
-            max={2000}
-            unit=" g"
-            value={weight}
-            onChange={setWeight}
-          />
-        </div>
-        <div>
-          <p className="filter-sidebar__label">Casing Material</p>
-          <CheckboxFilter
-            options={CASING_MATERIAL}
-            selected={casingMaterial}
-            onChange={setCasingMaterial}
-          />
-        </div>
-      </FilterSection>
-
-      <FilterSection title="Electrical Specification">
-        <ToggleFilter
-          label="Solar Powered"
-          checked={solarPowered}
-          onChange={setSolarPowered}
-        />
-      </FilterSection>
-
-      <FilterSection title="Connectivity Specification">
-        <div>
-          <p className="filter-sidebar__label">Cellular Technology</p>
-          <CheckboxFilter
-            options={CELLULAR_TECHNOLOGY}
-            selected={cellularTech}
-            onChange={setCellularTech}
-          />
-        </div>
-        <ToggleFilter label="WiFi" checked={wifi} onChange={setWifi} />
-      </FilterSection>
+            // text: checkbox list of every distinct value seen in the data
+            return (
+              <div key={attr.slug}>
+                <p className="filter-sidebar__label">{attr.name}</p>
+                <CheckboxFilter
+                  options={attr.options.map((o) => ({
+                    value: o.value,
+                    label: o.displayName,
+                  }))}
+                  selected={(current as string[]) ?? []}
+                  onChange={(next) => updateCheckbox(attr.slug, next)}
+                />
+              </div>
+            );
+          })}
+        </FilterSection>
+      ))}
     </aside>
   );
 }

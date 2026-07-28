@@ -1,8 +1,13 @@
 import "./RadioFilter.css";
 
+export interface RadioFilterOption {
+  value: string;
+  label: string;
+}
+
 export interface RadioFilterProps {
   name: string;
-  options: string[];
+  options: RadioFilterOption[];
   selected: string | null;
   onChange: (next: string) => void;
 }
@@ -16,15 +21,15 @@ export default function RadioFilter({
   return (
     <div className="radio-filter">
       {options.map((option) => (
-        <label key={option} className="radio-filter__option">
+        <label key={option.value} className="radio-filter__option">
           <input
             type="radio"
             name={name}
-            checked={selected === option}
-            onChange={() => onChange(option)}
+            checked={selected === option.value}
+            onChange={() => onChange(option.value)}
           />
           <span className="radio-filter__dot" />
-          <span className="radio-filter__label">{option}</span>
+          <span className="radio-filter__label">{option.label}</span>
         </label>
       ))}
     </div>

@@ -1,5 +1,5 @@
 import { NavLink, useSearchParams } from "react-router-dom";
-import { CATEGORIES } from "../data/Catalog";
+import { useCategories } from "../hooks/useCategories";
 import "./CategoryBar.css";
 
 export interface CategoryBarProps {
@@ -9,6 +9,7 @@ export interface CategoryBarProps {
 export default function CategoryBar({ variant = "dark" }: CategoryBarProps) {
   const [searchParams] = useSearchParams();
   const activeCategory = searchParams.get("category");
+  const { categories, loading } = useCategories();
 
   return (
     <nav
@@ -27,17 +28,17 @@ export default function CategoryBar({ variant = "dark" }: CategoryBarProps) {
             All
           </NavLink>
         </li>
-        {CATEGORIES.map((category) => (
-          <li key={category.slug} className="category-bar__item">
-            <NavLink
-              to={`/products?category=${category.slug}`}
-              className={`category-bar__pill${activeCategory === category.slug ? " category-bar__pill--active" : ""}`}
-            >
-              <span className="category-bar__icon">{category.icon}</span>
-              {category.name}
-            </NavLink>
-          </li>
-        ))}
+        {!loading &&
+          categories.map((category) => (
+            <li key={category.slug} className="category-bar__item">
+              <NavLink
+                to={`/products?category=${category.slug}`}
+                className={`category-bar__pill${activeCategory === category.slug ? " category-bar__pill--active" : ""}`}
+              >
+                {category.name}
+              </NavLink>
+            </li>
+          ))}
       </ul>
     </nav>
   );

@@ -1,20 +1,16 @@
-export interface Category {
-  slug: string;
-  name: string;
-  icon: string;
-}
+export const CATEGORY_ICONS: Record<string, string> = {
+  trackers: "📍",
+  dashcams: "🎥",
+  sensors: "🌡️",
+  obd: "🔌",
+  cameras: "📷",
+  modems: "📶",
+  batteries: "🔋",
+  antennas: "📡",
+  accessories: "🧰",
+};
 
-export const CATEGORIES: Category[] = [
-  { slug: "trackers", name: "GPS Trackers", icon: "📍" },
-  { slug: "dashcams", name: "Dash Cams", icon: "🎥" },
-  { slug: "sensors", name: "Sensors", icon: "🌡️" },
-  { slug: "obd", name: "OBD Devices", icon: "🔌" },
-  { slug: "cameras", name: "Cameras", icon: "📷" },
-  { slug: "modems", name: "Modems & Routers", icon: "📶" },
-  { slug: "batteries", name: "Batteries", icon: "🔋" },
-  { slug: "antennas", name: "Antennas", icon: "📡" },
-  { slug: "accessories", name: "Accessories", icon: "🧰" },
-];
+export const DEFAULT_CATEGORY_ICON = "🏷️";
 
 export interface Product {
   id: string;

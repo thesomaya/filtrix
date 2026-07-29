@@ -6,11 +6,10 @@ export default function Hero() {
     <section className="hero">
       <div className="hero__content">
         <h1 className="hero__title">
-          Compare <span className="hero__underline">everything</span> with{" "}
-          <span className="hero__underline">everything</span>
+          Compare <span className="hero__underline">everything</span>
         </h1>
         <p className="hero__subtitle">
-          Smartphones, cities, graphics cards, universities, and much more
+          Sensors, GPS Trackers, Cameras, and much more
         </p>
       </div>
 

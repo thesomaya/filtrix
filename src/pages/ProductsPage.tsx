@@ -1,34 +1,24 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import FilterSidebar, {
   type FilterValues,
 } from "../components/filters/FilterSidebar";
 import ProductCard from "../components/ProductCard";
 import CategoryBar from "../components/CategoryBar";
-import { CATEGORIES } from "../data/Catalog";
+import { useCategories } from "../hooks/useCategories";
+import { useCompare, MAX_COMPARE } from "../context/CompareContext";
+import type { ApiProduct } from "../types/product";
 import "./ProductsPage.css";
-
-// Shape actually returned by ProductsService.formatProduct()
-interface ApiAttribute {
-  id: string;
-  name: string;
-  value: string | number | boolean;
-}
-
-interface ApiProduct {
-  id: string;
-  title: string;
-  description: string | null;
-  price: string;
-  category: { id: string; name: string };
-  attributes: ApiAttribute[];
-}
 
 export default function ProductsPage() {
   const [searchParams] = useSearchParams();
   const categorySlug = searchParams.get("category");
+  const navigate = useNavigate();
 
-  const activeCategory = CATEGORIES.find((c) => c.slug === categorySlug);
+  const { categories } = useCategories();
+  const activeCategory = categories.find((c) => c.slug === categorySlug);
+
+  const { selected, toggleCompare, isSelected, isFull, clear } = useCompare();
 
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [filters, setFilters] = useState<FilterValues>({});
@@ -76,7 +66,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="products-page__layout">
-        <FilterSidebar onChange={setFilters} />
+        <FilterSidebar categorySlug={categorySlug} onChange={setFilters} />
 
         <div className="products-page__grid">
           {!loading && products.length === 0 && (
@@ -86,15 +76,42 @@ export default function ProductsPage() {
           {products.map((product) => (
             <ProductCard
               key={product.id}
+              id={product.id}
               image=""
               title={product.title}
               details={(product.attributes ?? [])
                 .slice(0, 3)
                 .map((attr) => `${attr.name}: ${attr.value}`)}
+              compareSelected={isSelected(product.id)}
+              onToggleCompare={toggleCompare}
+              compareDisabled={isFull}
             />
           ))}
         </div>
       </div>
+
+      {selected.length > 0 && (
+        <div className="products-page__compare-bar">
+          <span className="products-page__compare-count">
+            {selected.length}/{MAX_COMPARE} selected for comparison
+          </span>
+          <button
+            type="button"
+            className="products-page__compare-clear"
+            onClick={clear}
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            className="products-page__compare-action"
+            disabled={selected.length < 2}
+            onClick={() => navigate("/compare")}
+          >
+            Compare
+          </button>
+        </div>
+      )}
     </div>
   );
 }

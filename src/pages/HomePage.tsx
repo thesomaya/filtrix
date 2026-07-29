@@ -1,11 +1,16 @@
 import { Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import ProductCard from "../components/ProductCard";
-import { CATEGORIES, PRODUCTS } from "../data/Catalog";
+import { PRODUCTS } from "../data/Catalog";
+import { useCategories } from "../hooks/useCategories";
+
 import "./HomePage.css";
 
 export default function HomePage() {
   const featured = PRODUCTS.slice(0, 4);
+
+    const { categories } = useCategories();
+
 
   return (
     <div className="home">
@@ -19,13 +24,13 @@ export default function HomePage() {
           </p>
         </div>
         <div className="home__category-grid">
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <Link
               key={category.slug}
               to={`/products?category=${category.slug}`}
               className="home__category-tile"
             >
-              <span className="home__category-icon">{category.icon}</span>
+              <span className="home__category-icon"></span>
               <span className="home__category-name">{category.name}</span>
             </Link>
           ))}

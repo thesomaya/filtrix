@@ -1,11 +1,14 @@
-import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { useCategories } from "../hooks/useCategories";
 import "./Navbar.css";
 
 export default function Navbar() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { categories } = useCategories();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const onProductsPage = location.pathname === "/products";
+  const activeCategorySlug = onProductsPage ? searchParams.get("category") : null;
 
   return (
     <header className="navbar">
@@ -29,20 +32,18 @@ export default function Navbar() {
           <NavLink to="/products" className="navbar__link">
             All Products
           </NavLink>
-          <a href="#" className="navbar__link">
-            Blog
-          </a>
-          <button type="button" className="navbar__icon-btn" aria-label="Account">
+          <Link to="/login" className="navbar__icon-btn" aria-label="Account">
             👤
-          </button>
+          </Link>
         </div>
       </div>
 
       <div className="navbar__categories">
         <Link
           to="/products"
-          className={`navbar__pill${activeCategory === null ? " navbar__pill--active" : ""}`}
-          onClick={() => setActiveCategory(null)}
+          className={`navbar__pill${
+            onProductsPage && !activeCategorySlug ? " navbar__pill--active" : ""
+          }`}
         >
           All
         </Link>
@@ -51,9 +52,8 @@ export default function Navbar() {
             key={category.slug}
             to={`/products?category=${category.slug}`}
             className={`navbar__pill${
-              activeCategory === category.slug ? " navbar__pill--active" : ""
+              activeCategorySlug === category.slug ? " navbar__pill--active" : ""
             }`}
-            onClick={() => setActiveCategory(category.slug)}
           >
             {category.name}
           </Link>

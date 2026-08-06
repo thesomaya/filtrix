@@ -1,0 +1,115 @@
+.signup__tabs {
+  display: flex;
+  background: #f4f6f9;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.signup__tab {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #6b7686;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.signup__tab--active {
+  background: #ffffff;
+  color: #2f6fed;
+  box-shadow: 0 1px 4px rgba(31, 79, 196, 0.12);
+}
+
+.signup__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.signup__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2332;
+}
+
+.signup__field input {
+  border: 1px solid #e6eaf0;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #1a2332;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.signup__field input:focus {
+  border-color: #2f6fed;
+}
+
+.signup__submit {
+  border: none;
+  background: #2f6fed;
+  color: #ffffff;
+  font-size: 14.5px;
+  font-weight: 700;
+  padding: 12px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.signup__submit:hover:not(:disabled) {
+  background: #1f4fc4;
+}
+
+.signup__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.signup__resend {
+  border: none;
+  background: transparent;
+  color: #2f6fed;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: center;
+}
+
+.signup__resend:hover {
+  text-decoration: underline;
+}
+
+.signup__otp-hint {
+  font-size: 13.5px;
+  color: #6b7686;
+  margin: 0;
+}
+
+.signup__error {
+  background: #fdeeee;
+  border: 1px solid #f3c9c9;
+  color: #b83b3b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin: 0;
+}
+
+.signup__terms {
+  margin: 20px 0 0;
+  font-size: 12px;
+  color: #a3aabb;
+  text-align: center;
+  line-height: 1.5;
+}

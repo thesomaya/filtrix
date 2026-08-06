@@ -4,13 +4,13 @@
   padding: 24px 0 80px;
 }
 
-.products-page__category-bar {
-  margin-bottom: 24px;
-}
-
 .products-page__header,
 .products-page__layout {
   padding: 0 24px;
+}
+
+.products-page__header {
+  padding-top: 8px;
 }
 
 .products-page__empty {

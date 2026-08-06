@@ -1,31 +1,21 @@
 import "./Hero.css";
-import CategoryBar from "./CategoryBar";
 
 export default function Hero() {
   return (
     <section className="hero">
-      <div className="hero__content">
-        <h1 className="hero__title">
-          Compare <span className="hero__underline">everything</span>
-        </h1>
-        <p className="hero__subtitle">
-          Sensors, GPS Trackers, Cameras, and much more
-        </p>
-      </div>
-
-      <CategoryBar />
-
-      <div className="hero__wave" aria-hidden="true">
-        <svg
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0,64 C240,120 480,0 720,32 C960,64 1200,120 1440,64 L1440,120 L0,120 Z"
-            fill="var(--hero-wave-fill)"
-          />
-        </svg>
+      <div className="hero__banner">
+        <div className="hero__banner-text">
+          <p className="hero__eyebrow">Best deals on wearable sensors</p>
+          <h1 className="hero__title">
+            Compare <span className="hero__underline">everything</span>
+          </h1>
+          <p className="hero__subtitle">
+            Sensors, GPS trackers, cameras, and much more — up to 60% off
+          </p>
+        </div>
+        <div className="hero__banner-art" aria-hidden="true">
+          <div className="hero__blob" />
+        </div>
       </div>
     </section>
   );

@@ -1,19 +1,21 @@
 .compare-page {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 2.5rem 1.5rem 4rem;
+  background: #eef3fb;
+  min-height: 100vh;
 }
 
 .compare-page__empty,
 .compare-page__loading {
-  padding: 4rem 1rem;
+  padding: 5rem 1rem;
   text-align: center;
-  color: var(--color-text-muted, #6b7280);
+  color: #6b7686;
   font-size: 1rem;
 }
 
 .compare-page__empty a {
-  color: var(--color-primary, #2563eb);
+  color: #2f6fed;
   font-weight: 600;
   text-decoration: underline;
 }
@@ -26,14 +28,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .compare-page__title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--color-text, #111827);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #1a2332;
   margin: 0;
+  border-left: 5px solid #2f6fed;
+  padding-left: 14px;
 }
 
 .compare-page__controls {
@@ -47,80 +51,93 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: var(--color-text, #111827);
+  font-weight: 600;
+  color: #1a2332;
   cursor: pointer;
   user-select: none;
+  background: #ffffff;
+  border: 1px solid #e6eaf0;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
 }
 
 .compare-page__toggle input[type="checkbox"] {
   width: 1rem;
   height: 1rem;
-  accent-color: var(--color-primary, #2563eb);
+  accent-color: #2f6fed;
   cursor: pointer;
 }
 
 .compare-page__clear {
-  border: 1px solid var(--color-border, #d1d5db);
-  background: transparent;
-  color: var(--color-text-muted, #6b7280);
+  border: 1px solid #e6eaf0;
+  background: #ffffff;
+  color: #6b7686;
   font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.5rem 0.9rem;
-  border-radius: 8px;
+  font-weight: 700;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .compare-page__clear:hover {
-  background: var(--color-surface-muted, #f3f4f6);
-  color: var(--color-text, #111827);
+  background: #fdeeee;
+  color: #d64545;
+  border-color: #f3c9c9;
 }
 
 /* Table */
 
 .compare-page__table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 12px;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(31, 79, 196, 0.08);
+  border: 1px solid #e6eaf0;
 }
 
 .compare-page__table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--color-surface, #ffffff);
-  font-size: 0.9rem;
+  background: #ffffff;
+  font-size: 0.92rem;
 }
 
 .compare-page__table thead th {
-  background: var(--color-surface-muted, #f9fafb);
-  border-bottom: 2px solid var(--color-border, #e5e7eb);
+  background: linear-gradient(120deg, #16255c 0%, #2f6fed 100%);
+  color: #ffffff;
+  border-bottom: none;
   text-align: left;
-  padding: 1rem;
+  padding: 1.1rem 1.2rem;
   vertical-align: top;
 }
 
 .compare-page__feature-col {
   width: 200px;
-  min-width: 160px;
+  min-width: 170px;
   position: sticky;
   left: 0;
-  background: var(--color-surface, #ffffff);
-  font-weight: 600;
-  color: var(--color-text, #111827);
-  border-right: 1px solid var(--color-border, #e5e7eb);
+  background: #f4f7fd;
+  font-weight: 700;
+  color: #1a2332;
+  border-right: 1px solid #e6eaf0;
   z-index: 1;
 }
 
 thead .compare-page__feature-col {
-  background: var(--color-surface-muted, #f9fafb);
+  background: #16255c;
+  color: #ffffff;
   z-index: 2;
 }
 
 .compare-page__product-col {
-  min-width: 180px;
-  padding: 1rem;
-  color: var(--color-text, #111827);
-  border-left: 1px solid var(--color-border, #f3f4f6);
+  min-width: 190px;
+  padding: 1.1rem 1.2rem;
+  color: #1a2332;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+tbody .compare-page__product-col {
+  border-left: 1px solid #eef1f7;
 }
 
 .compare-page__product-heading {
@@ -128,28 +145,37 @@ thead .compare-page__feature-col {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .compare-page__remove {
   border: none;
-  background: transparent;
-  color: var(--color-text-muted, #9ca3af);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
   font-size: 0.8rem;
   line-height: 1;
   cursor: pointer;
-  padding: 0.15rem 0.35rem;
+  padding: 0.3rem 0.5rem;
   border-radius: 6px;
   flex-shrink: 0;
 }
 
 .compare-page__remove:hover {
-  color: var(--color-danger, #dc2626);
-  background: var(--color-surface-muted, #f3f4f6);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .compare-page__table tbody tr {
-  border-bottom: 1px solid var(--color-border, #f3f4f6);
+  border-bottom: 1px solid #eef1f7;
+  transition: background-color 0.12s ease;
+}
+
+.compare-page__table tbody tr:hover {
+  background: #f7faff;
+}
+
+.compare-page__table tbody tr:hover .compare-page__feature-col {
+  background: #eef3fd;
 }
 
 .compare-page__table tbody tr:last-child {
@@ -157,21 +183,33 @@ thead .compare-page__feature-col {
 }
 
 .compare-page__table tbody td {
-  padding: 0.85rem 1rem;
+  padding: 0.95rem 1.2rem;
 }
 
 .compare-page__row--different {
-  background: var(--color-highlight, #fffbeb);
+  background: #fff8e6;
 }
 
 .compare-page__row--different .compare-page__feature-col {
-  background: var(--color-highlight, #fffbeb);
+  background: #fdf1cf;
+}
+
+.compare-page__row--different td:not(.compare-page__feature-col)::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f0a93a;
+  margin-right: 8px;
+  vertical-align: middle;
 }
 
 .compare-page__no-diff {
   text-align: center;
-  color: var(--color-text-muted, #6b7280);
-  padding: 2.5rem 1rem;
+  color: #6b7686;
+  padding: 3rem 1rem;
+  font-style: italic;
 }
 
 /* Small screens: table scrolls horizontally, sticky column stays pinned */
@@ -189,6 +227,6 @@ thead .compare-page__feature-col {
   .compare-page__product-col,
   .compare-page__table thead th {
     padding: 0.75rem;
-    min-width: 140px;
+    min-width: 150px;
   }
 }

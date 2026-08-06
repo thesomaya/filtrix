@@ -4,7 +4,6 @@ import FilterSidebar, {
   type FilterValues,
 } from "../components/filters/FilterSidebar";
 import ProductCard from "../components/ProductCard";
-import CategoryBar from "../components/CategoryBar";
 import { useCategories } from "../hooks/useCategories";
 import { useCompare, MAX_COMPARE } from "../context/CompareContext";
 import type { ApiProduct } from "../types/product";
@@ -44,6 +43,7 @@ export default function ProductsPage() {
       });
 
       const data: ApiProduct[] = await response.json();
+      console.log(data);
       setProducts(data);
     } finally {
       setLoading(false);
@@ -52,10 +52,6 @@ export default function ProductsPage() {
 
   return (
     <div className="products-page">
-      <div className="products-page__category-bar">
-        <CategoryBar variant="light" />
-      </div>
-
       <div className="products-page__header">
         <h1 className="products-page__title">
           {activeCategory ? activeCategory.name : "All Products"}
@@ -77,7 +73,11 @@ export default function ProductsPage() {
             <ProductCard
               key={product.id}
               id={product.id}
-              image=""
+              image={
+                product.images?.length
+                  ? `http://localhost:3000${product.images[0].imageUrl}`
+                  : ""
+              }
               title={product.title}
               details={(product.attributes ?? [])
                 .slice(0, 3)

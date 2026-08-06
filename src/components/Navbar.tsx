@@ -4,7 +4,7 @@ import { useCategories } from "../hooks/useCategories";
 import "./Navbar.css";
 
 export default function Navbar() {
-  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { categories } = useCategories();
 
   return (
@@ -14,48 +14,50 @@ export default function Navbar() {
           filtrix
         </Link>
 
-        <nav className="navbar__links">
-          <button
-            type="button"
-            className={`navbar__categories-toggle${categoriesOpen ? " navbar__categories-toggle--open" : ""}`}
-            onClick={() => setCategoriesOpen((prev) => !prev)}
-            aria-expanded={categoriesOpen}
-          >
-            Categories
-            <span className="navbar__chevron" aria-hidden="true">
-              ⌄
-            </span>
-          </button>
+        <div className="navbar__search">
+          <span className="navbar__search-icon" aria-hidden="true">
+            🔍
+          </span>
+          <input
+            type="text"
+            className="navbar__search-input"
+            placeholder="Search sensors, trackers, cameras and more..."
+          />
+        </div>
+
+        <div className="navbar__actions">
           <NavLink to="/products" className="navbar__link">
             All Products
           </NavLink>
           <a href="#" className="navbar__link">
             Blog
           </a>
-        </nav>
-
-        <div className="navbar__actions">
           <button type="button" className="navbar__icon-btn" aria-label="Account">
             👤
           </button>
         </div>
       </div>
 
-      <div
-        className={`navbar__panel${categoriesOpen ? " navbar__panel--open" : ""}`}
-      >
-        <div className="navbar__panel-grid">
-          {categories.map((category) => (
-            <Link
-              key={category.slug}
-              to={`/products?category=${category.slug}`}
-              className="navbar__panel-item"
-              onClick={() => setCategoriesOpen(false)}
-            >
-              {category.name}
-            </Link>
-          ))}
-        </div>
+      <div className="navbar__categories">
+        <Link
+          to="/products"
+          className={`navbar__pill${activeCategory === null ? " navbar__pill--active" : ""}`}
+          onClick={() => setActiveCategory(null)}
+        >
+          All
+        </Link>
+        {categories.map((category) => (
+          <Link
+            key={category.slug}
+            to={`/products?category=${category.slug}`}
+            className={`navbar__pill${
+              activeCategory === category.slug ? " navbar__pill--active" : ""
+            }`}
+            onClick={() => setActiveCategory(category.slug)}
+          >
+            {category.name}
+          </Link>
+        ))}
       </div>
     </header>
   );

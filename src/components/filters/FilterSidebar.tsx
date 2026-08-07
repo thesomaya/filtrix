@@ -140,6 +140,69 @@ export default function FilterSidebar({
     }
   };
 
+  const clearAll = () => {
+    setValues({});
+    setRangeUi({});
+    onChange({});
+  };
+
+  // Build a flat, readable list of the filters currently applied so we can
+  // render them as removable chips in the "Active filters" panel.
+  const attrBySlug = new Map<string, FilterAttribute>();
+  groups.forEach((group) =>
+    group.attributes.forEach((attr) => attrBySlug.set(attr.slug, attr)),
+  );
+
+  type ActiveChip = { id: string; label: string; onRemove: () => void };
+
+  const activeChips: ActiveChip[] = [];
+
+  Object.entries(values).forEach(([slug, value]) => {
+    const attr = attrBySlug.get(slug);
+    if (!attr) return;
+
+    if (typeof value === "boolean") {
+      activeChips.push({
+        id: slug,
+        label: attr.name,
+        onRemove: () => updateToggle(slug, false),
+      });
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((optionValue) => {
+        const option = attr.options.find((o) => o.value === optionValue);
+        activeChips.push({
+          id: `${slug}:${optionValue}`,
+          label: option ? option.displayName : optionValue,
+          onRemove: () =>
+            updateCheckbox(
+              slug,
+              (values[slug] as string[]).filter((v) => v !== optionValue),
+            ),
+        });
+      });
+      return;
+    }
+
+    if (value && typeof value === "object") {
+      activeChips.push({
+        id: slug,
+        label: `${attr.name}: ${value.min} – ${value.max}`,
+        onRemove: () => {
+          clear(slug);
+          if (attr.range) {
+            setRangeUi((prev) => ({
+              ...prev,
+              [slug]: [attr.range!.min, attr.range!.max],
+            }));
+          }
+        },
+      });
+    }
+  });
+
   if (loading) {
     return (
       <aside className="filter-sidebar">
@@ -168,9 +231,78 @@ export default function FilterSidebar({
     <aside className="filter-sidebar">
       <div className="filter-sidebar__header">
         <h2 className="filter-sidebar__title">Filters</h2>
+        {activeChips.length > 0 && (
+          <button
+            type="button"
+            className="filter-sidebar__clear"
+            onClick={clearAll}
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       <div className="filter-sidebar__scroll">
+        {activeChips.length > 0 && (
+          <div className="filter-sidebar__active">
+            <div className="filter-sidebar__active-header">
+              <h3 className="filter-sidebar__active-title">
+                Active filters
+              </h3>
+              <button
+                type="button"
+                className="filter-sidebar__active-clear"
+                onClick={clearAll}
+                aria-label="Clear all filters"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+              </button>
+            </div>
+
+            <ul className="filter-sidebar__active-list">
+              {activeChips.map((chip) => (
+                <li key={chip.id} className="filter-sidebar__active-item">
+                  <span>{chip.label}</span>
+                  <button
+                    type="button"
+                    className="filter-sidebar__active-remove"
+                    onClick={chip.onRemove}
+                    aria-label={`Remove ${chip.label}`}
+                  >
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {groups.map((group, index) => (
           <FilterSection
             key={group.id}

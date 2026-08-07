@@ -1,6 +1,6 @@
 .filter-section {
   border-bottom: 1px solid #e6eaf0;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
 .filter-section:last-child {
@@ -16,7 +16,7 @@
 
   background: none;
   border: none;
-  padding: 14px 2px;
+  padding: 16px 2px;
   cursor: pointer;
 
   text-align: left;

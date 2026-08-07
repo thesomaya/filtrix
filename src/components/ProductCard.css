@@ -5,7 +5,7 @@
   border: 1px solid #eceef7;
   border-radius: 14px;
   overflow: hidden;
-  cursor: default;
+  cursor: pointer;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 

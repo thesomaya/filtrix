@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import FilterSidebar, {
   type FilterValues,
 } from "../components/filters/FilterSidebar";
@@ -61,6 +61,30 @@ export default function ProductsPage() {
         </p>
       </div>
 
+      <div className="products-page__categories">
+        <Link
+          to="/products"
+          className={`products-page__pill ${
+            !categorySlug ? "products-page__pill--active" : ""
+          }`}
+        >
+          All
+        </Link>
+        {categories.map((category) => (
+          <Link
+            key={category.slug}
+            to={`/products?category=${category.slug}`}
+            className={`products-page__pill ${
+              categorySlug === category.slug
+                ? "products-page__pill--active"
+                : ""
+            }`}
+          >
+            {category.name}
+          </Link>
+        ))}
+      </div>
+
       <div className="products-page__layout">
         <FilterSidebar categorySlug={categorySlug} onChange={setFilters} />
 
@@ -82,6 +106,7 @@ export default function ProductsPage() {
               details={(product.attributes ?? [])
                 .slice(0, 3)
                 .map((attr) => `${attr.name}: ${attr.value}`)}
+              onClick={() => navigate(`/products/${product.id}`)}
               compareSelected={isSelected(product.id)}
               onToggleCompare={toggleCompare}
               compareDisabled={isFull}

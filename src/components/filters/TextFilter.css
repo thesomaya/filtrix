@@ -1,16 +1,21 @@
-.text-filter {
+.text-filter__input {
   width: 100%;
   box-sizing: border-box;
   padding: 9px 12px;
+  border: 1px solid #e6eaf0;
   border-radius: 8px;
-  border: 1px solid #cfd4e6;
-  font-size: 0.88rem;
-  color: #10162f;
-  background: #ffffff;
+  background: #f9fafc;
+  font-size: 13.5px;
+  color: #1a2332;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.text-filter:focus {
-  outline: none;
-  border-color: #3b5bff;
-  box-shadow: 0 0 0 3px rgba(59, 91, 255, 0.12);
+.text-filter__input::placeholder {
+  color: #9aa2b4;
+}
+
+.text-filter__input:focus {
+  border-color: #2f6fed;
+  background: #ffffff;
 }

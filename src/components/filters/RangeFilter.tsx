@@ -35,11 +35,11 @@ export default function RangeFilter({
       <div className="range-filter__values">
         <span>
           {low}
-          {unit}
+          {unit && ` ${unit}`}
         </span>
         <span>
           {high}
-          {unit}
+          {unit && ` ${unit}`}
         </span>
       </div>
       <div className="range-filter__track-wrap">

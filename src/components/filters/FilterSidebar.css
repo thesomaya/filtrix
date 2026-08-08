@@ -164,6 +164,11 @@
   margin: 12px 0 8px;
 }
 
+.filter-sidebar__hint {
+  font-weight: 500;
+  color: #9aa2b4;
+}
+
 .filter-sidebar__loading,
 .filter-sidebar__empty {
   padding: 20px;

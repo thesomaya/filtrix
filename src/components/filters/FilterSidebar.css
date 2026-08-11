@@ -1,18 +1,16 @@
+/* --- 1. Main Sidebar Layout --- */
 .filter-sidebar {
-  background: #ffffff;
-  border: 1px solid #e6eaf0;
-  border-radius: 14px;
-  width: 280px;
+  background: transparent;
+  border: none;
+  width: 290px;
   flex-shrink: 0;
-
-  /* Sticky + capped height is what makes the filter list scroll on its
-     own, independent of the page scroll. */
   position: sticky;
   top: 88px;
   max-height: calc(100vh - 104px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .filter-sidebar__header {
@@ -20,16 +18,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 20px;
-  border-bottom: 1px solid #e6eaf0;
+  padding: 0 0 14px 4px;
   flex-shrink: 0;
 }
 
 .filter-sidebar__title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a2332;
+  font-size: 17px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.01em;
 }
 
 .filter-sidebar__clear {
@@ -38,46 +36,142 @@
   padding: 4px 2px;
   font-size: 13px;
   font-weight: 600;
-  color: #2f6fed;
+  color: #2563eb;
   cursor: pointer;
 }
 
 .filter-sidebar__clear:hover {
-  color: #1a56d6;
   text-decoration: underline;
 }
 
 .filter-sidebar__scroll {
   overflow-y: auto;
   flex: 1 1 auto;
-  padding: 4px 20px 20px;
+  padding: 2px 6px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .filter-sidebar__scroll::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .filter-sidebar__scroll::-webkit-scrollbar-thumb {
-  background: #d7deea;
+  background: #cbd5e1;
   border-radius: 999px;
 }
 
-/* --- Active filters card ---
-   Stays pinned near the top of the scroll area (with its own shadow) so the
-   currently applied filters are always reachable, no matter how far the
-   person has scrolled through the filter groups. */
-
-.filter-sidebar__active {
-  position: sticky;
-  top: 4px;
-  z-index: 1;
-
+/* --- 2. Card Blocks (Clean rounded white cards with soft shadows) --- */
+.filter-card {
   background: #ffffff;
-  border: 1px solid #e6eaf0;
-  border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(16, 22, 47, 0.1);
+  border-radius: 16px;
+  padding: 18px 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-card__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* --- 3. Collapsible Inner Subsections --- */
+.filter-sidebar__section-group {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.filter-sidebar__section-group:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.filter-sidebar__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.filter-sidebar__section-header:hover .filter-sidebar__section-title {
+  color: #0f172a;
+}
+
+.filter-sidebar__section-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #64748b;
+  transition: color 0.15s ease;
+}
+
+.filter-sidebar__section-chevron {
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.filter-sidebar__section-chevron.open {
+  transform: rotate(180deg);
+}
+
+.filter-sidebar__section-content {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-sidebar__section-content .filter-sidebar__label {
+  margin: 0 0 6px 0;
+}
+
+/* Each direct child is one filter row (a toggle, a range block, a
+   checkbox/radio group, etc). Give every row generous top/bottom
+   breathing room and a hairline divider between rows, Versus-style,
+   instead of relying on a small flex gap. */
+.filter-sidebar__section-content > div,
+.filter-card__body > div {
+  padding: 7px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.filter-sidebar__section-content > div:first-child,
+.filter-card__body > div:first-child {
+  padding-top: 4px;
+}
+
+.filter-sidebar__section-content > div:last-child,
+.filter-card__body > div:last-child {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
+/* --- 4. Active Filters Card ---
+   Rendered as its own flex child after .filter-sidebar__scroll (not inside
+   it), so it stays pinned to the bottom of the sidebar regardless of how
+   far the filter list itself is scrolled. */
+.filter-sidebar__active {
+  flex-shrink: 0;
+  z-index: 1;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.05);
   padding: 14px 16px 10px;
-  margin: 4px 0 18px;
+  margin: 12px 0 0;
 }
 
 .filter-sidebar__active-header {
@@ -90,28 +184,28 @@
 
 .filter-sidebar__active-title {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: #1a2332;
+  color: #1e293b;
 }
 
 .filter-sidebar__active-clear {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: #f4f6f9;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #f8fafc;
   border: none;
-  color: #6b7686;
+  color: #64748b;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .filter-sidebar__active-clear:hover {
-  background: #fdeaea;
-  color: #e5484d;
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 .filter-sidebar__active-list {
@@ -120,6 +214,17 @@
   padding: 0;
   display: flex;
   flex-direction: column;
+  max-height: 172px; /* ~4 rows at this item height, then scroll */
+  overflow-y: auto;
+}
+
+.filter-sidebar__active-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.filter-sidebar__active-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
 }
 
 .filter-sidebar__active-item {
@@ -127,10 +232,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 2px;
-  border-top: 1px solid #eef1f6;
-  font-size: 13.5px;
-  color: #1a2332;
+  padding: 7px 2px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 13px;
+  color: #334155;
 }
 
 .filter-sidebar__active-item:first-child {
@@ -142,36 +247,103 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
   background: none;
   border: none;
-  color: #9aa2b4;
+  color: #94a3b8;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .filter-sidebar__active-remove:hover {
-  background: #f4f6f9;
-  color: #e5484d;
+  background: #f1f5f9;
+  color: #ef4444;
 }
 
+/* --- 5. Labels & General UI text --- */
 .filter-sidebar__label {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: #1a2332;
-  margin: 12px 0 8px;
+  color: #334155;
+  margin: 10px 0 6px;
 }
 
 .filter-sidebar__hint {
   font-weight: 500;
-  color: #9aa2b4;
+  color: #94a3b8;
 }
 
 .filter-sidebar__loading,
 .filter-sidebar__empty {
   padding: 20px;
-  color: #6b7686;
-  font-size: 14px;
+  color: #64748b;
+  font-size: 13.5px;
+}
+/* --- Tooltip & Label Container --- */
+.filter-sidebar__label-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0 6px;
+}
+
+.filter-sidebar__label-container .filter-sidebar__label {
+  margin: 0;
+}
+
+.filter-sidebar__tooltip-trigger {
+  color: #cbd5e1;
+  cursor: help;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.filter-sidebar__tooltip-trigger:hover {
+  color: #94a3b8;
+}
+
+/* Portal Tooltip (Appended to body, immune to sidebar clipping) */
+.filter-sidebar__portal-tooltip {
+  position: fixed;
+  transform: translateY(-50%);
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  width: max-content;
+  max-width: 240px;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.4;
+  pointer-events: none;
+  z-index: 999999; /* Forces it above your product cards */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: tooltipFadeIn 0.15s ease forwards;
+}
+
+.filter-sidebar__portal-arrow {
+  position: absolute;
+  top: 50%;
+  left: -6px;
+  transform: translateY(-50%);
+  border-width: 5px 6px 5px 0;
+  border-style: solid;
+  border-color: transparent #1e293b transparent transparent;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    margin-left: -4px;
+  }
+  to {
+    opacity: 1;
+    margin-left: 0;
+  }
 }

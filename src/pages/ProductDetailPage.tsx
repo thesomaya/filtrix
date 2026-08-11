@@ -15,6 +15,39 @@ interface SpecGroup {
   attributes: ApiAttribute[];
 }
 
+// Renders a product attribute's value for the spec table. `attr.value` can
+// be a plain string/number/boolean, a { min, max } range object, or an
+// array of selected option values — String() on the first/last case just
+// gives "[object Object]" / a bare comma-joined list, so branch on shape.
+function formatSpecValue(attr: ApiAttribute): string {
+  const { value, unit } = attr;
+
+  if (value === null || value === undefined) {
+    return "—";
+  }
+
+  if (
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    "min" in value &&
+    "max" in value
+  ) {
+    const { min, max } = value as { min: number; max: number };
+    return unit ? `${min} to ${max} ${unit}` : `${min} to ${max}`;
+  }
+
+  if (Array.isArray(value)) {
+    const joined = value.join(", ");
+    return unit ? `${joined} ${unit}` : joined;
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  return unit ? `${value} ${unit}` : String(value);
+}
+
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -206,7 +239,6 @@ export default function ProductDetailPage() {
         <div className="product-detail__info">
           <p className="product-detail__category">{product.category.name}</p>
           <h1 className="product-detail__title">{product.title}</h1>
-          <p className="product-detail__price">{priceDisplay}</p>
 
           {product.description && (
             <p className="product-detail__description">{product.description}</p>
@@ -246,7 +278,7 @@ export default function ProductDetailPage() {
                     {group.attributes.map((attr) => (
                       <div key={attr.id} className="product-detail__spec-row">
                         <dt>{attr.name}</dt>
-                        <dd>{String(attr.value)}</dd>
+                        <dd>{formatSpecValue(attr)}</dd>
                       </div>
                     ))}
                   </dl>

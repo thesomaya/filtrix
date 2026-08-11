@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import FilterSection from "./FilterSection";
 import CheckboxFilter from "./CheckboxFilter";
 import RadioFilter from "./RadioFilter";
@@ -45,16 +46,14 @@ export interface FilterAttribute {
   id: string;
   slug: string;
   name: string;
+  section?: string | null;
+  description?: string | null;
   valueType: "text" | "number" | "boolean";
   filterType: FilterType;
+  unit?: string | null;
   allowMultiple: boolean;
   range: { min: number; max: number } | null;
   options: FilterOption[];
-  // Unit of measurement for numeric attributes (e.g. "mm", "g", "hour").
-  // Mirrors the `unit` column returned by the attributes API.
-  unit?: string | null;
-  // Rules that must ALL pass for this attribute to be shown. Absent/empty
-  // means "always visible".
   visibilityRules?: AttributeVisibilityRule[];
 }
 
@@ -150,6 +149,109 @@ function isAttributeVisible(
   });
 }
 
+  // 1. The Portal Component
+const PortalTooltip = ({ text, children }: { text: string; children: React.ReactNode }) => {
+  const [visible, setVisible] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseEnter = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.top + rect.height / 2,
+        left: rect.right + 10,
+      });
+      setVisible(true);
+    }
+  };
+
+  // Hide the tooltip if the user scrolls the sidebar so it doesn't detach and float away
+  useEffect(() => {
+    if (visible) {
+      const handleScroll = () => setVisible(false);
+      window.addEventListener("scroll", handleScroll, true); 
+      return () => window.removeEventListener("scroll", handleScroll, true);
+    }
+  }, [visible]);
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setVisible(false)}
+        className="filter-sidebar__tooltip-trigger"
+      >
+        {children}
+      </div>
+      {visible &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="filter-sidebar__portal-tooltip"
+            style={{ top: coords.top, left: coords.left }}
+          >
+            <div className="filter-sidebar__portal-arrow" />
+            {text}
+          </div>,
+          document.body
+        )}
+    </>
+  );
+};
+
+// 2. The Updated Label Renderer
+const renderLabel = (attr: FilterAttribute, hint?: string) => {
+  const labelText = attr.unit ? `${attr.name} (${attr.unit})` : attr.name;
+
+  return (
+    <div className="filter-sidebar__label-container">
+      <p className="filter-sidebar__label">
+        {labelText}
+        {hint && <span className="filter-sidebar__hint">{hint}</span>}
+      </p>
+
+      {attr.description && (
+        <PortalTooltip text={attr.description}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+          </svg>
+        </PortalTooltip>
+      )}
+    </div>
+  );
+};
+
+  const CollapsibleSection = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return (
+    <div className="filter-sidebar__section-group">
+      <div
+        className="filter-sidebar__section-header"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <h4 className="filter-sidebar__section-title">{title}</h4>
+        <svg
+          className={`filter-sidebar__section-chevron ${isOpen ? 'open' : ''}`}
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </div>
+      {isOpen && <div className="filter-sidebar__section-content">{children}</div>}
+    </div>
+  );
+};
+
 // Appends the unit to a label when present, e.g. "Weight" -> "Weight (g)".
 function labelWithUnit(attr: FilterAttribute): string {
   return attr.name;
@@ -204,6 +306,8 @@ export default function FilterSidebar({
       cancelled = true;
     };
   }, [categorySlug, onChange]);
+
+
 
   const update = (slug: string, value: FilterValues[string]) => {
     const next = { ...values, [slug]: value };
@@ -439,66 +543,6 @@ export default function FilterSidebar({
       </div>
 
       <div className="filter-sidebar__scroll">
-        {activeChips.length > 0 && (
-          <div className="filter-sidebar__active">
-            <div className="filter-sidebar__active-header">
-              <h3 className="filter-sidebar__active-title">
-                Active filters
-              </h3>
-              <button
-                type="button"
-                className="filter-sidebar__active-clear"
-                onClick={clearAll}
-                aria-label="Clear all filters"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                  <path d="M10 11v6" />
-                  <path d="M14 11v6" />
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                </svg>
-              </button>
-            </div>
-
-            <ul className="filter-sidebar__active-list">
-              {activeChips.map((chip) => (
-                <li key={chip.id} className="filter-sidebar__active-item">
-                  <span>{chip.label}</span>
-                  <button
-                    type="button"
-                    className="filter-sidebar__active-remove"
-                    onClick={chip.onRemove}
-                    aria-label={`Remove ${chip.label}`}
-                  >
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {groups.map((group, index) => {
           const visibleAttrs = group.attributes.filter((attr) =>
             isAttributeVisible(attr, values, attrById),
@@ -508,127 +552,208 @@ export default function FilterSidebar({
           // an empty, collapsible shell.
           if (visibleAttrs.length === 0) return null;
 
+          const groupedAttributes = visibleAttrs.reduce((acc, attr) => {
+            const sectionKey = attr.section || "unsectioned";
+            if (!acc[sectionKey]) {
+              acc[sectionKey] = [];
+            }
+            acc[sectionKey].push(attr);
+            return acc;
+          }, {} as Record<string, typeof visibleAttrs>);
+
           return (
-            <FilterSection
-              key={group.id}
-              title={group.name}
-              defaultOpen={index < 2}
-            >
-              {visibleAttrs.map((attr) => {
-                const current = values[attr.slug];
+            // The top-level group (e.g., "Design") is now its own separate card block
+            <div key={group.id} className="filter-card">
+              <h3 className="filter-card__title">{group.name}</h3>
 
-                switch (attr.filterType) {
-                  case "toggle":
+              <div className="filter-card__body">
+                {Object.entries(groupedAttributes).map(([sectionTitle, attrs]) => {
+                  
+                  // Helper function to keep the switch statement clean
+                  const renderFilters = () => attrs.map((attr) => {
+                    const current = values[attr.slug];
+
+                    switch (attr.filterType) {
+                      case "toggle":
+                        return (
+                          <div key={attr.slug}>
+                            <ToggleFilter
+                              label={attr.name}
+                              checked={Boolean(current)}
+                              onChange={(next) => updateToggle(attr.slug, next)}
+                            />
+                          </div>
+                        );
+
+                      case "range": {
+                        if (!attr.range) return null;
+
+                        const value =
+                          rangeUi[attr.slug] ?? [attr.range.min, attr.range.max];
+
+                        return (
+                          <div key={attr.slug}>
+                            {renderLabel(attr)}
+                            <RangeFilter
+                              min={attr.range.min}
+                              max={attr.range.max}
+                              value={value}
+                              unit={attr.unit ?? undefined}
+                              onChange={(next) =>
+                                updateRange(attr.slug, next, attr.range!)
+                              }
+                            />
+                          </div>
+                        );
+                      }
+
+                      case "radio":
+                        return (
+                          <div key={attr.slug}>
+                            {renderLabel(attr)}
+
+                            <RadioFilter
+                              name={attr.slug}
+                              options={attr.options.map((o) => ({
+                                value: o.value,
+                                label: o.displayName,
+                              }))}
+                              selected={(current as string) ?? null}
+                              onChange={(next) => updateRadio(attr.slug, next)}
+                            />
+                          </div>
+                        );
+
+                      case "text":
+                        return (
+                          <div key={attr.slug}>
+                            {renderLabel(attr)}
+
+                            <TextFilter
+                              value={(current as string) ?? ""}
+                              placeholder={`Search ${attr.name.toLowerCase()}`}
+                              onChange={(next) => updateText(attr.slug, next)}
+                            />
+                          </div>
+                        );
+
+                      case "intersection":
+                        return (
+                          <div key={attr.slug}>
+                            {renderLabel(attr)}
+
+                            <CheckboxFilter
+                              options={attr.options.map((o) => ({
+                                value: o.value,
+                                label: o.displayName,
+                              }))}
+                              selected={(current as string[]) ?? []}
+                              onChange={(next) => updateCheckbox(attr.slug, next)}
+                            />
+                          </div>
+                        );
+
+                      case "checkbox":
+                      default:
+                        return (
+                          <div key={attr.slug}>
+                            {renderLabel(attr)}
+
+                            <CheckboxFilter
+                              options={attr.options.map((o) => ({
+                                value: o.value,
+                                label: o.displayName,
+                              }))}
+                              selected={(current as string[]) ?? []}
+                              onChange={(next) => updateCheckbox(attr.slug, next)}
+                            />
+                          </div>
+                        );
+                    }
+                  });
+
+                  // If there is no section assigned, just render the filters normally
+                  if (sectionTitle === "unsectioned") {
                     return (
-                      <ToggleFilter
-                        key={attr.slug}
-                        label={attr.name}
-                        checked={Boolean(current)}
-                        onChange={(next) => updateToggle(attr.slug, next)}
-                      />
-                    );
-
-                  case "range": {
-                    if (!attr.range) return null;
-
-                    const value =
-                      rangeUi[attr.slug] ?? [attr.range.min, attr.range.max];
-
-                    return (
-                      <div key={attr.slug}>
-                        <p className="filter-sidebar__label">
-                          {labelWithUnit(attr)}
-                        </p>
-
-                        <RangeFilter
-                          min={attr.range.min}
-                          max={attr.range.max}
-                          value={value}
-                          unit={attr.unit ?? undefined}
-                          onChange={(next) =>
-                            updateRange(attr.slug, next, attr.range!)
-                          }
-                        />
+                      <div
+                        key={sectionTitle}
+                        className="filter-sidebar__section-group filter-sidebar__section-content"
+                      >
+                        {renderFilters()}
                       </div>
                     );
                   }
 
-                  case "radio":
-                    return (
-                      <div key={attr.slug}>
-                        <p className="filter-sidebar__label">{attr.name}</p>
-
-                        <RadioFilter
-                          name={attr.slug}
-                          options={attr.options.map((o) => ({
-                            value: o.value,
-                            label: o.displayName,
-                          }))}
-                          selected={(current as string) ?? null}
-                          onChange={(next) => updateRadio(attr.slug, next)}
-                        />
-                      </div>
-                    );
-
-                  case "text":
-                    return (
-                      <div key={attr.slug}>
-                        <p className="filter-sidebar__label">
-                          {labelWithUnit(attr)}
-                        </p>
-
-                        <TextFilter
-                          value={(current as string) ?? ""}
-                          placeholder={`Search ${attr.name.toLowerCase()}`}
-                          onChange={(next) => updateText(attr.slug, next)}
-                        />
-                      </div>
-                    );
-
-                  case "intersection":
-                    return (
-                      <div key={attr.slug}>
-                        <p className="filter-sidebar__label">
-                          {attr.name}
-                          <span className="filter-sidebar__hint">
-                            {" "}
-                            · matches all selected
-                          </span>
-                        </p>
-
-                        <CheckboxFilter
-                          options={attr.options.map((o) => ({
-                            value: o.value,
-                            label: o.displayName,
-                          }))}
-                          selected={(current as string[]) ?? []}
-                          onChange={(next) => updateCheckbox(attr.slug, next)}
-                        />
-                      </div>
-                    );
-
-                  case "checkbox":
-                  default:
-                    return (
-                      <div key={attr.slug}>
-                        <p className="filter-sidebar__label">{attr.name}</p>
-
-                        <CheckboxFilter
-                          options={attr.options.map((o) => ({
-                            value: o.value,
-                            label: o.displayName,
-                          }))}
-                          selected={(current as string[]) ?? []}
-                          onChange={(next) => updateCheckbox(attr.slug, next)}
-                        />
-                      </div>
-                    );
-                }
-              })}
-            </FilterSection>
+                  // If it has a section (e.g., "DIMENSIONS"), render it with the new collapsible toggle
+                  return (
+                    <CollapsibleSection key={sectionTitle} title={sectionTitle}>
+                      {renderFilters()}
+                    </CollapsibleSection>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </div>
+
+      {activeChips.length > 0 && (
+        <div className="filter-sidebar__active">
+          <div className="filter-sidebar__active-header">
+            <h3 className="filter-sidebar__active-title">Active filters</h3>
+            <button
+              type="button"
+              className="filter-sidebar__active-clear"
+              onClick={clearAll}
+              aria-label="Clear all filters"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </button>
+          </div>
+
+          <ul className="filter-sidebar__active-list">
+            {activeChips.map((chip) => (
+              <li key={chip.id} className="filter-sidebar__active-item">
+                <span>{chip.label}</span>
+                <button
+                  type="button"
+                  className="filter-sidebar__active-remove"
+                  onClick={chip.onRemove}
+                  aria-label={`Remove ${chip.label}`}
+                >
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </aside>
   );
 }

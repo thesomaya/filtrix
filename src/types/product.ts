@@ -2,6 +2,8 @@ export interface ApiAttribute {
   id: string;
   name: string;
   value: string | number | boolean;
+  unit: string;
+
 }
 
 export interface ApiImage {

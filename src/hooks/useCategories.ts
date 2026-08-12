@@ -6,7 +6,7 @@ export interface Category {
   name: string;
 }
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
 
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);

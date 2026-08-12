@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import "../../pages/admin/admin.css";
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
 
 export type FieldType = "text" | "textarea" | "number" | "boolean" | "select";
 

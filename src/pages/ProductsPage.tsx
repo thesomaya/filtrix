@@ -36,7 +36,7 @@ export default function ProductsPage() {
       };
       if (categorySlug) body.categorySlug = categorySlug;
 
-      const response = await fetch("http://localhost:3000/products/search", {
+      const response = await fetch("https://filtrix-3y8ynhfah-filtrixd.vercel.app/products/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -99,7 +99,7 @@ export default function ProductsPage() {
               id={product.id}
               image={
                 product.images?.length
-                  ? `http://localhost:3000${product.images[0].imageUrl}`
+                  ? `https://filtrix-3y8ynhfah-filtrixd.vercel.app/${product.images[0].imageUrl}`
                   : ""
               }
               title={product.title}

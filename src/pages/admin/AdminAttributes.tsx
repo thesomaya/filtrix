@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import "./admin.css";
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
 
 const VALUE_TYPES = ["text", "number", "boolean"];
 const FILTER_TYPES = ["checkbox", "radio", "range", "text", "toggle", "select"];

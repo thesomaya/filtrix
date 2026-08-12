@@ -8,6 +8,7 @@ import { useCategories } from "../hooks/useCategories";
 import { useCompare, MAX_COMPARE } from "../context/CompareContext";
 import type { ApiProduct } from "../types/product";
 import "./ProductsPage.css";
+import { API_BASE } from "../config";
 
 export default function ProductsPage() {
   const [searchParams] = useSearchParams();
@@ -36,7 +37,7 @@ export default function ProductsPage() {
       };
       if (categorySlug) body.categorySlug = categorySlug;
 
-      const response = await fetch("https://filtrix-3y8ynhfah-filtrixd.vercel.app/products/search", {
+      const response = await fetch(`${API_BASE}/products/search`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

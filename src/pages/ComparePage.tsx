@@ -5,8 +5,6 @@ import type { ApiProduct } from "../types/product";
 import "./ComparePage.css";
 import { API_BASE } from "../config";
 
-//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
-
 interface CompareRow {
   key: string;
   label: string;

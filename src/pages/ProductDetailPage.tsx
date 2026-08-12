@@ -7,8 +7,6 @@ import type { ApiAttribute, ApiProduct } from "../types/product";
 import "./ProductDetailPage.css";
 import { API_BASE } from "../config";
 
-//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
-
 interface SpecGroup {
   id: string;
   name: string;

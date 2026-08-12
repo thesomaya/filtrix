@@ -74,8 +74,6 @@ export interface FilterSidebarProps {
   onChange: (filters: FilterValues) => void;
 }
 
-//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
-
 // --- Visibility evaluation -------------------------------------------------
 
 function compareValues(

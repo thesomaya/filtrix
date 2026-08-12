@@ -2,8 +2,6 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import "../../pages/admin/admin.css";
 import { API_BASE } from "../../config";
 
-//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
-
 export type FieldType = "text" | "textarea" | "number" | "boolean" | "select";
 
 export interface SelectOption {

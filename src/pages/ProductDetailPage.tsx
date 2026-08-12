@@ -5,8 +5,9 @@ import { useCategories } from "../hooks/useCategories";
 import type { FilterGroup } from "../components/filters/FilterSidebar";
 import type { ApiAttribute, ApiProduct } from "../types/product";
 import "./ProductDetailPage.css";
+import { API_BASE } from "../config";
 
-const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
+//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
 
 interface SpecGroup {
   id: string;

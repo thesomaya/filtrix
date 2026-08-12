@@ -3,8 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import OAuthButtons from "../components/OAuthButtons";
 import "./SignUp.css";
+import { API_BASE } from "../config";
 
-const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
+//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
 
 type Mode = "email" | "phone";
 

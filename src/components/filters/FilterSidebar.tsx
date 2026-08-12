@@ -6,6 +6,7 @@ import RangeFilter from "./RangeFilter";
 import ToggleFilter from "./ToggleFilter";
 import TextFilter from "./TextFilter";
 import "./FilterSidebar.css";
+import { API_BASE } from "../../config";
 
 export interface FilterOption {
   value: string;
@@ -73,7 +74,7 @@ export interface FilterSidebarProps {
   onChange: (filters: FilterValues) => void;
 }
 
-const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
+//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
 
 // --- Visibility evaluation -------------------------------------------------
 

@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import "./AccountSettings.css";
+import { API_BASE } from "../config";
 
-const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
+//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
 
 interface Account {
   id: string;

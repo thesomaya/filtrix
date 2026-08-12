@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE } from "../config";
 
 export interface Category {
   id: string;
@@ -6,7 +7,7 @@ export interface Category {
   name: string;
 }
 
-const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
+//const API_BASE = "https://filtrix-3y8ynhfah-filtrixd.vercel.app/";
 
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);

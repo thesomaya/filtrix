@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import FilterSection from "./FilterSection";
 import CheckboxFilter from "./CheckboxFilter";
 import RadioFilter from "./RadioFilter";
 import RangeFilter from "./RangeFilter";
@@ -251,11 +250,6 @@ const renderLabel = (attr: FilterAttribute, hint?: string) => {
     </div>
   );
 };
-
-// Appends the unit to a label when present, e.g. "Weight" -> "Weight (g)".
-function labelWithUnit(attr: FilterAttribute): string {
-  return attr.name;
-}
 
 export default function FilterSidebar({
   categorySlug,
@@ -543,7 +537,7 @@ export default function FilterSidebar({
       </div>
 
       <div className="filter-sidebar__scroll">
-        {groups.map((group, index) => {
+        {groups.map((group) => {
           const visibleAttrs = group.attributes.filter((attr) =>
             isAttributeVisible(attr, values, attrById),
           );

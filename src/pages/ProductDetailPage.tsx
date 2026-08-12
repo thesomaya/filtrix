@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useCompare, MAX_COMPARE } from "../context/CompareContext";
+import { useCompare } from "../context/CompareContext";
 import { useCategories } from "../hooks/useCategories";
 import type { FilterGroup } from "../components/filters/FilterSidebar";
 import type { ApiAttribute, ApiProduct } from "../types/product";
@@ -142,14 +142,6 @@ export default function ProductDetailPage() {
   const images = product.images ?? [];
   const attributes = product.attributes ?? [];
   const selected = isSelected(product.id);
-
-  const price = Number(product.price);
-  const priceDisplay = Number.isFinite(price) ? `$${price}` : product.price;
-
-  // Group the product's attributes the same way FilterSidebar groups filter
-  // attributes: by matching each attribute to its definition inside the
-  // fetched attribute-groups (by id first, name as a fallback since ids are
-  // the most reliable link between a product attribute and its definition).
   const specGroups: SpecGroup[] = [];
   const unmatched: ApiAttribute[] = [];
 

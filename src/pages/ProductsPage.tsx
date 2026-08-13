@@ -99,8 +99,8 @@ export default function ProductsPage() {
               key={product.id}
               id={product.id}
               image={
-                product.images?.length
-                  ? `https://filtrix-3y8ynhfah-filtrixd.vercel.app/${product.images[0].imageUrl}`
+                product.images?.[0]?.url
+                  ? product.images[0].url
                   : ""
               }
               title={product.title}

@@ -8,13 +8,14 @@ export interface ApiAttribute {
 
 export interface ApiImage {
   id: string;
-  imageUrl: string;
+  url: string;
   isPrimary: boolean;
 }
 export interface ApiProduct {
   id: string;
   title: string;
   description: string | null;
+  url: string | null;
   price: string;
   category: { id: string; name: string };
   images: ApiImage[];

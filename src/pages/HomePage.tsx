@@ -20,7 +20,12 @@ export default function HomePage() {
               to={`/products?category=${category.slug}`}
               className="home__category-pill"
             >
-              <span className="home__category-icon" aria-hidden="true" />
+              <img
+                className="home__category-icon"
+                src={category.icon || "src/data/images/3887847.png"}
+                alt=""
+                aria-hidden="true"
+              />
               <span className="home__category-name">{category.name}</span>
             </Link>
           ))}

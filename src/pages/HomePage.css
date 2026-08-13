@@ -102,6 +102,7 @@
   border-radius: 50%;
   background: #eaf1ff;
   display: inline-block;
+  object-fit: cover;
 }
 
 .home__category-name {

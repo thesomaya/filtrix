@@ -201,7 +201,7 @@ export default function ProductDetailPage() {
           <div className="product-detail__gallery-main">
             {images.length > 0 ? (
               <img
-                src={`${API_BASE}${images[activeImage].imageUrl}`}
+                src={product.images[0].url}
                 alt={product.title}
               />
             ) : (
@@ -220,7 +220,7 @@ export default function ProductDetailPage() {
                   }`}
                   onClick={() => setActiveImage(index)}
                 >
-                  <img src={`${API_BASE}${img.imageUrl}`} alt="" />
+                  <img src={product.images[0].url} alt="" />
                 </button>
               ))}
             </div>

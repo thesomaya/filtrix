@@ -17,28 +17,41 @@ export default function RangeFilter({
 }: RangeFilterProps) {
   const [low, high] = value;
 
+  // Round to 1 decimal place (matching the 0.1 step below) so dragging
+  // never accumulates floating-point noise like 80.9939019785531.
+  const round = (n: number) => Math.round(n * 10) / 10;
+
   const handleLow = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = Math.min(Number(e.target.value), high);
+    const next = Math.min(round(Number(e.target.value)), high);
     onChange([next, high]);
   };
 
   const handleHigh = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = Math.max(Number(e.target.value), low);
+    const next = Math.max(round(Number(e.target.value)), low);
     onChange([low, next]);
   };
 
   const lowPct = ((low - min) / (max - min)) * 100;
   const highPct = ((high - min) / (max - min)) * 100;
 
+  // The two thumbs are separate, fully-overlapping <input type="range">
+  // elements. Whichever renders second normally sits on top and "wins" any
+  // click where the thumbs are close together or overlapping — which makes
+  // the other thumb impossible to grab and drag back to its edge. Give
+  // priority to whichever thumb has crossed into the other's half of the
+  // track, since that's the one the user is actively trying to move.
+  const midpoint = (min + max) / 2;
+  const lowOnTop = low > midpoint;
+
   return (
     <div className="range-filter">
       <div className="range-filter__values">
         <span>
-          {low}
+          {round(low)}
           {unit && ` ${unit}`}
         </span>
         <span>
-          {high}
+          {round(high)}
           {unit && ` ${unit}`}
         </span>
       </div>
@@ -52,17 +65,21 @@ export default function RangeFilter({
           type="range"
           min={min}
           max={max}
+          step={0.1}
           value={low}
           onChange={handleLow}
           className="range-filter__input"
+          style={{ zIndex: lowOnTop ? 2 : 1 }}
         />
         <input
           type="range"
           min={min}
           max={max}
+          step={0.1}
           value={high}
           onChange={handleHigh}
           className="range-filter__input"
+          style={{ zIndex: lowOnTop ? 1 : 2 }}
         />
       </div>
     </div>

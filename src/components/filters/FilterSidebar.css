@@ -25,6 +25,34 @@
   flex-shrink: 0;
 }
 
+.filter-sidebar__header-titles {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.filter-sidebar__count {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.filter-sidebar__show-more {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 6px 0 2px;
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+.filter-sidebar__show-more:hover {
+  text-decoration: underline;
+}
+
 .filter-sidebar__title {
   margin: 0;
   font-size: 17px;
@@ -87,9 +115,28 @@
   color: #1e293b;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  margin: 0;
+}
+
+/* The whole group card title row is now a clickable toggle, styled the
+   same as before but as a <button> instead of a plain <h3>. */
+.filter-card__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 0 0 8px 0;
   margin: 0 0 14px 0;
-  padding-bottom: 8px;
   border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  text-align: left;
+}
+
+.filter-card__header:hover .filter-card__title {
+  color: #0f172a;
 }
 
 /* --- 3. Collapsible Inner Subsections --- */

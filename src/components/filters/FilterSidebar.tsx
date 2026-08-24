@@ -51,6 +51,9 @@ export interface FilterAttribute {
   valueType: "text" | "number" | "boolean";
   filterType: FilterType;
   unit?: string | null;
+  // Only meaningful when valueType === "number". Controls whether the
+  // range slider steps by whole numbers or tenths.
+  numberType?: "integer" | "decimal" | null;
   allowMultiple: boolean;
   range: { min: number; max: number } | null;
   options: FilterOption[];
@@ -72,6 +75,10 @@ export type FilterValues = Record<
 export interface FilterSidebarProps {
   categorySlug?: string | null;
   onChange: (filters: FilterValues) => void;
+  // Number of products currently matching the applied filters, shown in
+  // the sticky header. Pass this from wherever the product list/count is
+  // fetched — the sidebar doesn't compute it itself.
+  productCount?: number;
 }
 
 // --- Visibility evaluation -------------------------------------------------
@@ -250,9 +257,79 @@ const renderLabel = (attr: FilterAttribute, hint?: string) => {
   );
 };
 
+// Renders up to 4 filters, then a "Show N more" toggle for the rest.
+const VISIBLE_FILTER_LIMIT = 4;
+
+const FilterGroupList = ({
+  attrs,
+  renderFilter,
+}: {
+  attrs: FilterAttribute[];
+  renderFilter: (attr: FilterAttribute) => React.ReactNode;
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasMore = attrs.length > VISIBLE_FILTER_LIMIT;
+  const visible = expanded ? attrs : attrs.slice(0, VISIBLE_FILTER_LIMIT);
+
+  return (
+    <>
+      {visible.map(renderFilter)}
+      {hasMore && (
+        <button
+          type="button"
+          className="filter-sidebar__show-more"
+          onClick={() => setExpanded((prev) => !prev)}
+        >
+          {expanded ? "Show less" : `Show ${attrs.length - VISIBLE_FILTER_LIMIT} more`}
+        </button>
+      )}
+    </>
+  );
+};
+
+// The top-level group card (e.g. "Physical Specification") is collapsible
+// the same way a section is, just styled as the outer card header.
+const CollapsibleGroupCard = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return (
+    <div className="filter-card">
+      <button
+        type="button"
+        className="filter-card__header"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+      >
+        <h3 className="filter-card__title">{title}</h3>
+        <svg
+          className={`filter-sidebar__section-chevron ${isOpen ? "open" : ""}`}
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {isOpen && <div className="filter-card__body">{children}</div>}
+    </div>
+  );
+};
+
 export default function FilterSidebar({
   categorySlug,
   onChange,
+  productCount,
 }: FilterSidebarProps) {
   const [groups, setGroups] = useState<FilterGroup[]>([]);
   const [rangeUi, setRangeUi] = useState<Record<string, [number, number]>>({});
@@ -523,7 +600,14 @@ export default function FilterSidebar({
   return (
     <aside className="filter-sidebar">
       <div className="filter-sidebar__header">
-        <h2 className="filter-sidebar__title">Filters</h2>
+        <div className="filter-sidebar__header-titles">
+          <h2 className="filter-sidebar__title">Filters</h2>
+          {typeof productCount === "number" && (
+            <span className="filter-sidebar__count">
+              {productCount.toLocaleString()} {productCount === 1 ? "result" : "results"}
+            </span>
+          )}
+        </div>
         {activeChips.length > 0 && (
           <button
             type="button"
@@ -555,15 +639,13 @@ export default function FilterSidebar({
           }, {} as Record<string, typeof visibleAttrs>);
 
           return (
-            // The top-level group (e.g., "Design") is now its own separate card block
-            <div key={group.id} className="filter-card">
-              <h3 className="filter-card__title">{group.name}</h3>
-
-              <div className="filter-card__body">
+            // The top-level group (e.g., "Design") is now its own separate, collapsible card block
+            <CollapsibleGroupCard key={group.id} title={group.name}>
                 {Object.entries(groupedAttributes).map(([sectionTitle, attrs]) => {
                   
-                  // Helper function to keep the switch statement clean
-                  const renderFilters = () => attrs.map((attr) => {
+                  // Renders a single attribute's filter widget. Called by
+                  // FilterGroupList, which handles the show-more slicing.
+                  const renderFilter = (attr: (typeof attrs)[number]): React.ReactNode => {
                     const current = values[attr.slug];
 
                     switch (attr.filterType) {
@@ -592,6 +674,7 @@ export default function FilterSidebar({
                               max={attr.range.max}
                               value={value}
                               unit={attr.unit ?? undefined}
+                              numberType={attr.numberType ?? undefined}
                               onChange={(next) =>
                                 updateRange(attr.slug, next, attr.range!)
                               }
@@ -663,7 +746,7 @@ export default function FilterSidebar({
                           </div>
                         );
                     }
-                  });
+                  };
 
                   // If there is no section assigned, just render the filters normally
                   if (sectionTitle === "unsectioned") {
@@ -672,7 +755,7 @@ export default function FilterSidebar({
                         key={sectionTitle}
                         className="filter-sidebar__section-group filter-sidebar__section-content"
                       >
-                        {renderFilters()}
+                        <FilterGroupList attrs={attrs} renderFilter={renderFilter} />
                       </div>
                     );
                   }
@@ -680,12 +763,11 @@ export default function FilterSidebar({
                   // If it has a section (e.g., "DIMENSIONS"), render it with the new collapsible toggle
                   return (
                     <CollapsibleSection key={sectionTitle} title={sectionTitle}>
-                      {renderFilters()}
+                      <FilterGroupList attrs={attrs} renderFilter={renderFilter} />
                     </CollapsibleSection>
                   );
                 })}
-              </div>
-            </div>
+            </CollapsibleGroupCard>
           );
         })}
       </div>

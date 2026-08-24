@@ -5,6 +5,11 @@ export interface RangeFilterProps {
   max: number;
   value: [number, number];
   unit?: string;
+  // Controls step size and display precision: "integer" steps by whole
+  // numbers with no decimal shown; "decimal" (the default, for backward
+  // compatibility with attributes that don't specify one) steps by tenths
+  // and always shows one decimal place.
+  numberType?: "integer" | "decimal";
   onChange: (next: [number, number]) => void;
 }
 
@@ -13,13 +18,20 @@ export default function RangeFilter({
   max,
   value,
   unit = "",
+  numberType = "decimal",
   onChange,
 }: RangeFilterProps) {
   const [low, high] = value;
+  const isInteger = numberType === "integer";
+  const step = isInteger ? 1 : 0.1;
 
-  // Round to 1 decimal place (matching the 0.1 step below) so dragging
-  // never accumulates floating-point noise like 80.9939019785531.
-  const round = (n: number) => Math.round(n * 10) / 10;
+  // Round to the step's precision so dragging never accumulates
+  // floating-point noise like 80.9939019785531.
+  const round = (n: number) => (isInteger ? Math.round(n) : Math.round(n * 10) / 10);
+
+  // Whole numbers show with no decimal; tenths always show one decimal
+  // place (e.g. "4.0", not just "4") so the precision is visually clear.
+  const format = (n: number) => (isInteger ? String(round(n)) : round(n).toFixed(1));
 
   const handleLow = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = Math.min(round(Number(e.target.value)), high);
@@ -47,11 +59,11 @@ export default function RangeFilter({
     <div className="range-filter">
       <div className="range-filter__values">
         <span>
-          {round(low)}
+          {format(low)}
           {unit && ` ${unit}`}
         </span>
         <span>
-          {round(high)}
+          {format(high)}
           {unit && ` ${unit}`}
         </span>
       </div>
@@ -65,7 +77,7 @@ export default function RangeFilter({
           type="range"
           min={min}
           max={max}
-          step={0.1}
+          step={step}
           value={low}
           onChange={handleLow}
           className="range-filter__input"
@@ -75,7 +87,7 @@ export default function RangeFilter({
           type="range"
           min={min}
           max={max}
-          step={0.1}
+          step={step}
           value={high}
           onChange={handleHigh}
           className="range-filter__input"

@@ -33,15 +33,25 @@ export default function RangeFilter({
   // place (e.g. "4.0", not just "4") so the precision is visually clear.
   const format = (n: number) => (isInteger ? String(round(n)) : round(n).toFixed(1));
 
-  const handleLow = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = Math.min(round(Number(e.target.value)), high);
-    onChange([next, high]);
-  };
+  // If the value is within one step of either edge, snap all the way to
+// that edge. This covers ranges where (max - min) isn't a clean multiple
+// of step, which otherwise leaves a sliver near min/max unreachable by
+// dragging (e.g. min=0, max=10.3, step=1 can only reach 10, never 10.3).
+const snapToEdge = (n: number) => {
+  if (n - min < step) return min;
+  if (max - n < step) return max;
+  return n;
+};
 
-  const handleHigh = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = Math.max(round(Number(e.target.value)), low);
-    onChange([low, next]);
-  };
+const handleLow = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const next = Math.min(snapToEdge(round(Number(e.target.value))), high);
+  onChange([next, high]);
+};
+
+const handleHigh = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const next = Math.max(snapToEdge(round(Number(e.target.value))), low);
+  onChange([low, next]);
+};
 
   const lowPct = ((low - min) / (max - min)) * 100;
   const highPct = ((high - min) / (max - min)) * 100;

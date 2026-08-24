@@ -13,8 +13,6 @@ export interface FilterOption {
   displayName: string;
 }
 
-// Mirrors the `FilterType` enum in schema.prisma. This decides which
-// widget an attribute renders as, independent of its underlying valueType.
 export type FilterType =
   | "checkbox"
   | "toggle"
@@ -23,7 +21,6 @@ export type FilterType =
   | "text"
   | "range";
 
-// Mirrors the `VisibilityOperator` enum in schema.prisma.
 export type VisibilityOperator =
   | "equals"
   | "not_equals"
@@ -34,8 +31,6 @@ export type VisibilityOperator =
   | "contains"
   | "not_contains";
 
-// One row of the `AttributeVisibility` table: "show me only when
-// `dependsOnAttributeId`'s current value satisfies `operator` `value`".
 export interface AttributeVisibilityRule {
   dependsOnAttributeId: string;
   operator: VisibilityOperator;
@@ -51,8 +46,6 @@ export interface FilterAttribute {
   valueType: "text" | "number" | "boolean";
   filterType: FilterType;
   unit?: string | null;
-  // Only meaningful when valueType === "number". Controls whether the
-  // range slider steps by whole numbers or tenths.
   numberType?: "integer" | "decimal" | null;
   allowMultiple: boolean;
   range: { min: number; max: number } | null;
@@ -75,13 +68,8 @@ export type FilterValues = Record<
 export interface FilterSidebarProps {
   categorySlug?: string | null;
   onChange: (filters: FilterValues) => void;
-  // Number of products currently matching the applied filters, shown in
-  // the sticky header. Pass this from wherever the product list/count is
-  // fetched — the sidebar doesn't compute it itself.
   productCount?: number;
 }
-
-// --- Visibility evaluation -------------------------------------------------
 
 function compareValues(
   operator: VisibilityOperator,
@@ -113,8 +101,6 @@ function compareValues(
     case "greater_than_or_equal":
     case "less_than":
     case "less_than_or_equal": {
-      // For range filters there's no single "current value" — we compare
-      // against the low end of the selected range.
       const actualNum =
         actual && typeof actual === "object" && "min" in (actual as object)
           ? (actual as { min: number }).min
@@ -133,9 +119,6 @@ function compareValues(
   }
 }
 
-// An attribute with no rules is always visible. Otherwise every rule must
-// pass (AND), and the attribute it depends on must currently have a value
-// set at all — an unset dependency can't satisfy any condition.
 function isAttributeVisible(
   attr: FilterAttribute,
   values: FilterValues,
@@ -145,7 +128,7 @@ function isAttributeVisible(
 
   return attr.visibilityRules.every((rule) => {
     const dependsOn = attrById.get(rule.dependsOnAttributeId);
-    if (!dependsOn) return true; // dependency isn't in this category, don't block rendering
+    if (!dependsOn) return true;
 
     const actual = values[dependsOn.slug];
     if (actual === undefined) return false;
@@ -154,8 +137,13 @@ function isAttributeVisible(
   });
 }
 
-  // 1. The Portal Component
-const PortalTooltip = ({ text, children }: { text: string; children: React.ReactNode }) => {
+const PortalTooltip = ({
+  text,
+  children,
+}: {
+  text: string;
+  children: React.ReactNode;
+}) => {
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -171,11 +159,10 @@ const PortalTooltip = ({ text, children }: { text: string; children: React.React
     }
   };
 
-  // Hide the tooltip if the user scrolls the sidebar so it doesn't detach and float away
   useEffect(() => {
     if (visible) {
       const handleScroll = () => setVisible(false);
-      window.addEventListener("scroll", handleScroll, true); 
+      window.addEventListener("scroll", handleScroll, true);
       return () => window.removeEventListener("scroll", handleScroll, true);
     }
   }, [visible]);
@@ -200,14 +187,17 @@ const PortalTooltip = ({ text, children }: { text: string; children: React.React
             <div className="filter-sidebar__portal-arrow" />
             {text}
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );
 };
 
-// 2. The Updated Label Renderer
-const renderLabel = (attr: FilterAttribute, hint?: string) => {
+const renderLabel = (
+  attr: FilterAttribute,
+  hint?: string,
+  onClear?: () => void,
+) => {
   const labelText = attr.unit ? `${attr.name} (${attr.unit})` : attr.name;
 
   return (
@@ -217,18 +207,36 @@ const renderLabel = (attr: FilterAttribute, hint?: string) => {
         {hint && <span className="filter-sidebar__hint">{hint}</span>}
       </p>
 
-      {attr.description && (
-        <PortalTooltip text={attr.description}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
-          </svg>
-        </PortalTooltip>
-      )}
+      <div className="filter-sidebar__label-actions">
+        {onClear && (
+          <button
+            type="button"
+            className="filter-sidebar__clear-filter"
+            onClick={onClear}
+          >
+            Clear
+          </button>
+        )}
+
+        {attr.description && (
+          <PortalTooltip text={attr.description}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+            </svg>
+          </PortalTooltip>
+        )}
+      </div>
     </div>
   );
 };
 
-  const CollapsibleSection = ({ title, children }: { title: string; children: React.ReactNode }) => {
+const CollapsibleSection = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
@@ -239,7 +247,7 @@ const renderLabel = (attr: FilterAttribute, hint?: string) => {
       >
         <h4 className="filter-sidebar__section-title">{title}</h4>
         <svg
-          className={`filter-sidebar__section-chevron ${isOpen ? 'open' : ''}`}
+          className={`filter-sidebar__section-chevron ${isOpen ? "open" : ""}`}
           width="16"
           height="16"
           viewBox="0 0 24 24"
@@ -252,12 +260,13 @@ const renderLabel = (attr: FilterAttribute, hint?: string) => {
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </div>
-      {isOpen && <div className="filter-sidebar__section-content">{children}</div>}
+      {isOpen && (
+        <div className="filter-sidebar__section-content">{children}</div>
+      )}
     </div>
   );
 };
 
-// Renders up to 4 filters, then a "Show N more" toggle for the rest.
 const VISIBLE_FILTER_LIMIT = 4;
 
 const FilterGroupList = ({
@@ -269,7 +278,9 @@ const FilterGroupList = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const hasMore = attrs.length > VISIBLE_FILTER_LIMIT;
-  const visible = expanded ? attrs : attrs.slice(0, VISIBLE_FILTER_LIMIT);
+  const visible = expanded
+    ? attrs
+    : attrs.slice(0, VISIBLE_FILTER_LIMIT);
 
   return (
     <>
@@ -280,15 +291,15 @@ const FilterGroupList = ({
           className="filter-sidebar__show-more"
           onClick={() => setExpanded((prev) => !prev)}
         >
-          {expanded ? "Show less" : `Show ${attrs.length - VISIBLE_FILTER_LIMIT} more`}
+          {expanded
+            ? "Show less"
+            : `Show ${attrs.length - VISIBLE_FILTER_LIMIT} more`}
         </button>
       )}
     </>
   );
 };
 
-// The top-level group card (e.g. "Physical Specification") is collapsible
-// the same way a section is, just styled as the outer card header.
 const CollapsibleGroupCard = ({
   title,
   children,
@@ -336,6 +347,15 @@ export default function FilterSidebar({
   const [values, setValues] = useState<FilterValues>({});
   const [loading, setLoading] = useState(true);
 
+  const sidebarRef = useRef<HTMLElement>(null);
+  const activeFiltersRef = useRef<HTMLDivElement>(null);
+
+  const [activeFiltersHeight, setActiveFiltersHeight] = useState(0);
+  const [activeFiltersPosition, setActiveFiltersPosition] = useState({
+    left: 0,
+    width: 0,
+  });
+
   useEffect(() => {
     let cancelled = false;
 
@@ -357,8 +377,6 @@ export default function FilterSidebar({
 
         if (!cancelled) {
           setGroups(data);
-
-          // Reset filters when category changes
           setValues({});
           setRangeUi({});
           onChange({});
@@ -376,8 +394,6 @@ export default function FilterSidebar({
       cancelled = true;
     };
   }, [categorySlug, onChange]);
-
-
 
   const update = (slug: string, value: FilterValues[string]) => {
     const next = { ...values, [slug]: value };
@@ -461,9 +477,9 @@ export default function FilterSidebar({
     onChange({});
   };
 
-  // Lookups used both for rendering and visibility evaluation.
   const attrBySlug = new Map<string, FilterAttribute>();
   const attrById = new Map<string, FilterAttribute>();
+
   groups.forEach((group) =>
     group.attributes.forEach((attr) => {
       attrBySlug.set(attr.slug, attr);
@@ -471,9 +487,6 @@ export default function FilterSidebar({
     }),
   );
 
-  // If a filter becomes hidden (its dependency changed) while it still has
-  // a value applied, drop that value so results stay consistent with what
-  // the person can actually see and edit.
   useEffect(() => {
     if (groups.length === 0) return;
 
@@ -488,6 +501,7 @@ export default function FilterSidebar({
     if (hidden.length === 0) return;
 
     const next = { ...values };
+
     hidden.forEach((attr) => {
       delete next[attr.slug];
       resetRangeUi(attr);
@@ -495,10 +509,13 @@ export default function FilterSidebar({
 
     setValues(next);
     onChange(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values, groups]);
 
-  type ActiveChip = { id: string; label: string; onRemove: () => void };
+  type ActiveChip = {
+    id: string;
+    label: string;
+    onRemove: () => void;
+  };
 
   const activeChips: ActiveChip[] = [];
 
@@ -518,11 +535,13 @@ export default function FilterSidebar({
 
     if (attr.filterType === "radio" && typeof value === "string") {
       const option = attr.options.find((o) => o.value === value);
+
       activeChips.push({
         id: slug,
         label: option ? option.displayName : value,
         onRemove: () => updateRadio(slug, ""),
       });
+
       return;
     }
 
@@ -532,25 +551,33 @@ export default function FilterSidebar({
         label: `${attr.name}: "${value}"`,
         onRemove: () => updateText(slug, ""),
       });
+
       return;
     }
 
     if (
-      (attr.filterType === "checkbox" || attr.filterType === "intersection") &&
+      (attr.filterType === "checkbox" ||
+        attr.filterType === "intersection") &&
       Array.isArray(value)
     ) {
       value.forEach((optionValue) => {
-        const option = attr.options.find((o) => o.value === optionValue);
+        const option = attr.options.find(
+          (o) => o.value === optionValue,
+        );
+
         activeChips.push({
           id: `${slug}:${optionValue}`,
           label: option ? option.displayName : optionValue,
           onRemove: () =>
             updateCheckbox(
               slug,
-              (values[slug] as string[]).filter((v) => v !== optionValue),
+              (values[slug] as string[]).filter(
+                (v) => v !== optionValue,
+              ),
             ),
         });
       });
+
       return;
     }
 
@@ -572,6 +599,49 @@ export default function FilterSidebar({
       });
     }
   });
+
+  useEffect(() => {
+    const updatePosition = () => {
+      if (!sidebarRef.current) return;
+
+      const rect = sidebarRef.current.getBoundingClientRect();
+
+      setActiveFiltersPosition({
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+
+    updatePosition();
+
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    const element = activeFiltersRef.current;
+
+    if (!element || activeChips.length === 0) {
+      setActiveFiltersHeight(0);
+      return;
+    }
+
+    const updateHeight = () => {
+      setActiveFiltersHeight(element.offsetHeight);
+    };
+
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [activeChips.length]);
 
   if (loading) {
     return (
@@ -598,16 +668,19 @@ export default function FilterSidebar({
   }
 
   return (
-    <aside className="filter-sidebar">
+    <aside ref={sidebarRef} className="filter-sidebar">
       <div className="filter-sidebar__header">
         <div className="filter-sidebar__header-titles">
           <h2 className="filter-sidebar__title">Filters</h2>
+
           {typeof productCount === "number" && (
             <span className="filter-sidebar__count">
-              {productCount.toLocaleString()} {productCount === 1 ? "result" : "results"}
+              {productCount.toLocaleString()}{" "}
+              {productCount === 1 ? "result" : "results"}
             </span>
           )}
         </div>
+
         {activeChips.length > 0 && (
           <button
             type="button"
@@ -619,33 +692,47 @@ export default function FilterSidebar({
         )}
       </div>
 
-      <div className="filter-sidebar__scroll">
+      <div
+        className="filter-sidebar__scroll"
+        style={{
+          paddingBottom:
+            activeChips.length > 0
+              ? `${activeFiltersHeight + 24}px`
+              : undefined,
+        }}
+      >
         {groups.map((group) => {
           const visibleAttrs = group.attributes.filter((attr) =>
             isAttributeVisible(attr, values, attrById),
           );
 
-          // A group with every attribute currently hidden shouldn't render
-          // an empty, collapsible shell.
           if (visibleAttrs.length === 0) return null;
 
-          const groupedAttributes = visibleAttrs.reduce((acc, attr) => {
-            const sectionKey = attr.section || "unsectioned";
-            if (!acc[sectionKey]) {
-              acc[sectionKey] = [];
-            }
-            acc[sectionKey].push(attr);
-            return acc;
-          }, {} as Record<string, typeof visibleAttrs>);
+          const groupedAttributes = visibleAttrs.reduce(
+            (acc, attr) => {
+              const sectionKey = attr.section || "unsectioned";
+
+              if (!acc[sectionKey]) {
+                acc[sectionKey] = [];
+              }
+
+              acc[sectionKey].push(attr);
+
+              return acc;
+            },
+            {} as Record<string, typeof visibleAttrs>,
+          );
 
           return (
-            // The top-level group (e.g., "Design") is now its own separate, collapsible card block
-            <CollapsibleGroupCard key={group.id} title={group.name}>
-                {Object.entries(groupedAttributes).map(([sectionTitle, attrs]) => {
-                  
-                  // Renders a single attribute's filter widget. Called by
-                  // FilterGroupList, which handles the show-more slicing.
-                  const renderFilter = (attr: (typeof attrs)[number]): React.ReactNode => {
+            <CollapsibleGroupCard
+              key={group.id}
+              title={group.name}
+            >
+              {Object.entries(groupedAttributes).map(
+                ([sectionTitle, attrs]) => {
+                  const renderFilter = (
+                    attr: (typeof attrs)[number],
+                  ): React.ReactNode => {
                     const current = values[attr.slug];
 
                     switch (attr.filterType) {
@@ -655,7 +742,9 @@ export default function FilterSidebar({
                             <ToggleFilter
                               label={attr.name}
                               checked={Boolean(current)}
-                              onChange={(next) => updateToggle(attr.slug, next)}
+                              onChange={(next) =>
+                                updateToggle(attr.slug, next)
+                              }
                             />
                           </div>
                         );
@@ -664,19 +753,38 @@ export default function FilterSidebar({
                         if (!attr.range) return null;
 
                         const value =
-                          rangeUi[attr.slug] ?? [attr.range.min, attr.range.max];
+                          rangeUi[attr.slug] ?? [
+                            attr.range.min,
+                            attr.range.max,
+                          ];
 
                         return (
                           <div key={attr.slug}>
-                            {renderLabel(attr)}
+                            {renderLabel(
+                              attr,
+                              undefined,
+                              current !== undefined
+                                ? () => {
+                                    clear(attr.slug);
+                                    resetRangeUi(attr);
+                                  }
+                                : undefined,
+                            )}
+
                             <RangeFilter
                               min={attr.range.min}
                               max={attr.range.max}
                               value={value}
                               unit={attr.unit ?? undefined}
-                              numberType={attr.numberType ?? undefined}
+                              numberType={
+                                attr.numberType ?? undefined
+                              }
                               onChange={(next) =>
-                                updateRange(attr.slug, next, attr.range!)
+                                updateRange(
+                                  attr.slug,
+                                  next,
+                                  attr.range!,
+                                )
                               }
                             />
                           </div>
@@ -686,7 +794,17 @@ export default function FilterSidebar({
                       case "radio":
                         return (
                           <div key={attr.slug}>
-                            {renderLabel(attr)}
+                            {renderLabel(
+                              attr,
+                              undefined,
+                              current !== undefined
+                                ? () =>
+                                    updateRadio(
+                                      attr.slug,
+                                      "",
+                                    )
+                                : undefined,
+                            )}
 
                             <RadioFilter
                               name={attr.slug}
@@ -694,8 +812,12 @@ export default function FilterSidebar({
                                 value: o.value,
                                 label: o.displayName,
                               }))}
-                              selected={(current as string) ?? null}
-                              onChange={(next) => updateRadio(attr.slug, next)}
+                              selected={
+                                (current as string) ?? null
+                              }
+                              onChange={(next) =>
+                                updateRadio(attr.slug, next)
+                              }
                             />
                           </div>
                         );
@@ -703,12 +825,24 @@ export default function FilterSidebar({
                       case "text":
                         return (
                           <div key={attr.slug}>
-                            {renderLabel(attr)}
+                            {renderLabel(
+                              attr,
+                              undefined,
+                              current
+                                ? () =>
+                                    updateText(
+                                      attr.slug,
+                                      "",
+                                    )
+                                : undefined,
+                            )}
 
                             <TextFilter
                               value={(current as string) ?? ""}
                               placeholder={`Search ${attr.name.toLowerCase()}`}
-                              onChange={(next) => updateText(attr.slug, next)}
+                              onChange={(next) =>
+                                updateText(attr.slug, next)
+                              }
                             />
                           </div>
                         );
@@ -716,15 +850,33 @@ export default function FilterSidebar({
                       case "intersection":
                         return (
                           <div key={attr.slug}>
-                            {renderLabel(attr)}
+                            {renderLabel(
+                              attr,
+                              undefined,
+                              Array.isArray(current) &&
+                                current.length > 0
+                                ? () =>
+                                    updateCheckbox(
+                                      attr.slug,
+                                      [],
+                                    )
+                                : undefined,
+                            )}
 
                             <CheckboxFilter
                               options={attr.options.map((o) => ({
                                 value: o.value,
                                 label: o.displayName,
                               }))}
-                              selected={(current as string[]) ?? []}
-                              onChange={(next) => updateCheckbox(attr.slug, next)}
+                              selected={
+                                (current as string[]) ?? []
+                              }
+                              onChange={(next) =>
+                                updateCheckbox(
+                                  attr.slug,
+                                  next,
+                                )
+                              }
                             />
                           </div>
                         );
@@ -733,49 +885,94 @@ export default function FilterSidebar({
                       default:
                         return (
                           <div key={attr.slug}>
-                            {renderLabel(attr)}
+                            {renderLabel(
+                              attr,
+                              undefined,
+                              Array.isArray(current) &&
+                                current.length > 0
+                                ? () =>
+                                    updateCheckbox(
+                                      attr.slug,
+                                      [],
+                                    )
+                                : undefined,
+                            )}
 
                             <CheckboxFilter
                               options={attr.options.map((o) => ({
                                 value: o.value,
                                 label: o.displayName,
                               }))}
-                              selected={(current as string[]) ?? []}
-                              onChange={(next) => updateCheckbox(attr.slug, next)}
+                              selected={
+                                (current as string[]) ?? []
+                              }
+                              onChange={(next) =>
+                                updateCheckbox(
+                                  attr.slug,
+                                  next,
+                                )
+                              }
                             />
                           </div>
                         );
                     }
                   };
 
-                  // If there is no section assigned, just render the filters normally
                   if (sectionTitle === "unsectioned") {
                     return (
                       <div
                         key={sectionTitle}
                         className="filter-sidebar__section-group filter-sidebar__section-content"
                       >
-                        <FilterGroupList attrs={attrs} renderFilter={renderFilter} />
+                        <FilterGroupList
+                          attrs={attrs}
+                          renderFilter={renderFilter}
+                        />
                       </div>
                     );
                   }
 
-                  // If it has a section (e.g., "DIMENSIONS"), render it with the new collapsible toggle
                   return (
-                    <CollapsibleSection key={sectionTitle} title={sectionTitle}>
-                      <FilterGroupList attrs={attrs} renderFilter={renderFilter} />
+                    <CollapsibleSection
+                      key={sectionTitle}
+                      title={sectionTitle}
+                    >
+                      <FilterGroupList
+                        attrs={attrs}
+                        renderFilter={renderFilter}
+                      />
                     </CollapsibleSection>
                   );
-                })}
+                },
+              )}
             </CollapsibleGroupCard>
           );
         })}
       </div>
 
       {activeChips.length > 0 && (
-        <div className="filter-sidebar__active">
+        <div
+          ref={activeFiltersRef}
+          className="filter-sidebar__active"
+          style={{
+            left: `${activeFiltersPosition.left}px`,
+            width: `${activeFiltersPosition.width}px`,
+          }}
+        >
           <div className="filter-sidebar__active-header">
-            <h3 className="filter-sidebar__active-title">Active filters</h3>
+            <div className="filter-sidebar__active-title-group">
+              <h3 className="filter-sidebar__active-title">
+                Active filters
+              </h3>
+
+              {typeof productCount === "number" && (
+                <span className="filter-sidebar__active-count">
+                  {productCount.toLocaleString()}{" "}
+                  {productCount === 1 ? "result" : "results"}
+                </span>
+              )}
+            </div>
+
             <button
               type="button"
               className="filter-sidebar__active-clear"
@@ -803,8 +1000,12 @@ export default function FilterSidebar({
 
           <ul className="filter-sidebar__active-list">
             {activeChips.map((chip) => (
-              <li key={chip.id} className="filter-sidebar__active-item">
+              <li
+                key={chip.id}
+                className="filter-sidebar__active-item"
+              >
                 <span>{chip.label}</span>
+
                 <button
                   type="button"
                   className="filter-sidebar__active-remove"
@@ -820,8 +1021,18 @@ export default function FilterSidebar({
                     strokeWidth="2.5"
                     strokeLinecap="round"
                   >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
+                    <line
+                      x1="18"
+                      y1="6"
+                      x2="6"
+                      y2="18"
+                    />
+                    <line
+                      x1="6"
+                      y1="6"
+                      x2="18"
+                      y2="18"
+                    />
                   </svg>
                 </button>
               </li>

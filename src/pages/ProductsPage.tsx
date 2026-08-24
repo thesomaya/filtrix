@@ -87,7 +87,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="products-page__layout">
-        <FilterSidebar categorySlug={categorySlug} onChange={setFilters} />
+        <FilterSidebar categorySlug={categorySlug} onChange={setFilters} productCount={loading ? undefined : products.length}/>
 
         <div className="products-page__grid">
           {!loading && products.length === 0 && (

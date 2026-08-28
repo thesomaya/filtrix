@@ -1,15 +1,49 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCompare } from "../context/CompareContext";
-import type { ApiProduct } from "../types/product";
+import type { ApiAttribute, ApiProduct } from "../types/product";
 import "./ComparePage.css";
 import { API_BASE } from "../config";
 
 interface CompareRow {
   key: string;
   label: string;
-  values: (string | number | boolean)[];
+  values: string[];
   isDifferent: boolean;
+}
+
+// Same shape-checking as formatSpecValue() in ProductDetailPage.tsx —
+// attr.value can be a plain string/number/boolean, a { min, max } range
+// object, or an array of selected option values. String() on a range
+// object just gives "[object Object]", and on an array gives a bare
+// comma list with no unit, so branch on shape instead.
+function formatAttributeValue(attr: ApiAttribute): string {
+  const { value, unit } = attr;
+
+  if (value === null || value === undefined) {
+    return "—";
+  }
+
+  if (
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    "min" in value &&
+    "max" in value
+  ) {
+    const { min, max } = value as { min: number; max: number };
+    return unit ? `${min} to ${max} ${unit}` : `${min} to ${max}`;
+  }
+
+  if (Array.isArray(value)) {
+    const joined = value.join(", ");
+    return unit ? `${joined} ${unit}` : joined;
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  return unit ? `${value} ${unit}` : String(value);
 }
 
 function buildRows(products: ApiProduct[]): CompareRow[] {
@@ -42,14 +76,14 @@ function buildRows(products: ApiProduct[]): CompareRow[] {
       label: name,
       values: products.map((p) => {
         const found = (p.attributes ?? []).find((a) => a.name === name);
-        return found ? found.value : "—";
+        return found ? formatAttributeValue(found) : "—";
       }),
     });
   }
 
   return rows.map((row) => ({
     ...row,
-    isDifferent: new Set(row.values.map((v) => String(v))).size > 1,
+    isDifferent: new Set(row.values).size > 1,
   }));
 }
 
@@ -178,7 +212,7 @@ export default function ComparePage() {
                 <td className="compare-page__feature-col">{row.label}</td>
                 {row.values.map((value, i) => (
                   <td key={i} className="compare-page__product-col">
-                    {String(value)}
+                    {value}
                   </td>
                 ))}
               </tr>

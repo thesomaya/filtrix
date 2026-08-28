@@ -6,9 +6,44 @@ import FilterSidebar, {
 import ProductCard from "../components/ProductCard";
 import { useCategories } from "../hooks/useCategories";
 import { useCompare, MAX_COMPARE } from "../context/CompareContext";
-import type { ApiProduct } from "../types/product";
+import type { ApiAttribute, ApiProduct } from "../types/product";
 import "./ProductsPage.css";
 import { API_BASE } from "../config";
+
+// Renders a product attribute's value for the card preview. Mirrors
+// formatSpecValue() in ProductDetailPage.tsx — `attr.value` can be a plain
+// string/number/boolean, a { min, max } range object, or an array of
+// selected option values, so it needs the same shape-checking instead of
+// a raw template-string interpolation (which just gives "[object Object]"
+// for a range, or a bare comma list for an array).
+function formatAttributeDetail(attr: ApiAttribute): string {
+  const { name, value, unit } = attr;
+
+  if (value === null || value === undefined) {
+    return `${name}: —`;
+  }
+
+  if (
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    "min" in value &&
+    "max" in value
+  ) {
+    const { min, max } = value as { min: number; max: number };
+    return unit ? `${name}: ${min} to ${max} ${unit}` : `${name}: ${min} to ${max}`;
+  }
+
+  if (Array.isArray(value)) {
+    const joined = value.join(", ");
+    return unit ? `${name}: ${joined} ${unit}` : `${name}: ${joined}`;
+  }
+
+  if (typeof value === "boolean") {
+    return `${name}: ${value ? "Yes" : "No"}`;
+  }
+
+  return unit ? `${name}: ${value} ${unit}` : `${name}: ${value}`;
+}
 
 export default function ProductsPage() {
   const [searchParams] = useSearchParams();
@@ -23,11 +58,16 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [filters, setFilters] = useState<FilterValues>({});
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, filters]);
+
+  useEffect(() => {
+    setSearch("");
+  }, [categorySlug]);
 
   async function loadProducts() {
     setLoading(true);
@@ -51,6 +91,12 @@ export default function ProductsPage() {
     }
   }
 
+  const visibleProducts = search.trim()
+    ? products.filter((p) =>
+        p.title.toLowerCase().includes(search.trim().toLowerCase()),
+      )
+    : products;
+
   return (
     <div className="products-page">
       <div className="products-page__header">
@@ -58,8 +104,43 @@ export default function ProductsPage() {
           {activeCategory ? activeCategory.name : "All Products"}
         </h1>
         <p className="products-page__count">
-          {loading ? "Loading…" : `${products.length} results`}
+          {loading ? "Loading…" : `${visibleProducts.length} results`}
         </p>
+
+        <div className="products-page__search">
+          <svg
+            className="products-page__search-icon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            className="products-page__search-input"
+            placeholder="Search products…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button
+              type="button"
+              className="products-page__search-clear"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="products-page__categories">
@@ -87,14 +168,18 @@ export default function ProductsPage() {
       </div>
 
       <div className="products-page__layout">
-        <FilterSidebar categorySlug={categorySlug} onChange={setFilters} productCount={loading ? undefined : products.length}/>
+        <FilterSidebar categorySlug={categorySlug} onChange={setFilters} productCount={loading ? undefined : visibleProducts.length}/>
 
         <div className="products-page__grid">
-          {!loading && products.length === 0 && (
-            <p className="products-page__empty">No products found.</p>
+          {!loading && visibleProducts.length === 0 && (
+            <p className="products-page__empty">
+              {search
+                ? `No products match "${search}".`
+                : "No products found."}
+            </p>
           )}
 
-          {products.map((product) => (
+          {visibleProducts.map((product) => (
             <ProductCard
               key={product.id}
               id={product.id}
@@ -106,7 +191,7 @@ export default function ProductsPage() {
               title={product.title}
               details={(product.attributes ?? [])
                 .slice(0, 3)
-                .map((attr) => `${attr.name}: ${attr.value}`)}
+                .map(formatAttributeDetail)}
               onClick={() => navigate(`/products/${product.id}`)}
               compareSelected={isSelected(product.id)}
               onToggleCompare={toggleCompare}

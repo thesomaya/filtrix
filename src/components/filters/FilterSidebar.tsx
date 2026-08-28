@@ -13,7 +13,6 @@ export interface FilterOption {
   displayName: string;
 }
 
-
 export type FilterType =
   | "checkbox"
   | "toggle"
@@ -444,7 +443,6 @@ export default function FilterSidebar({
   const updateRange = (
     slug: string,
     next: [number, number],
-    bounds: { min: number; max: number },
   ) => {
     setRangeUi((prev) => ({
       ...prev,
@@ -782,11 +780,7 @@ export default function FilterSidebar({
                               }
                               active={current !== undefined}
                               onChange={(next) =>
-                                updateRange(
-                                  attr.slug,
-                                  next,
-                                  attr.range!,
-                                )
+                                updateRange(attr.slug, next)
                               }
                             />
                           </div>

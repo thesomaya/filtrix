@@ -10,6 +10,12 @@ export interface RangeFilterProps {
   // compatibility with attributes that don't specify one) steps by tenths
   // and always shows one decimal place.
   numberType?: "integer" | "decimal";
+  // Whether this filter is actually applied/selected. This is driven by
+  // the parent (e.g. whether a value exists in filter state), not derived
+  // from thumb position — since dragging to the full min/max bounds is now
+  // a valid applied selection, not a reset. Defaults to the old
+  // position-based behavior if the parent doesn't pass it.
+  active?: boolean;
   onChange: (next: [number, number]) => void;
 }
 
@@ -19,6 +25,7 @@ export default function RangeFilter({
   value,
   unit = "",
   numberType = "decimal",
+  active,
   onChange,
 }: RangeFilterProps) {
   const [low, high] = value;
@@ -56,6 +63,15 @@ const handleHigh = (e: React.ChangeEvent<HTMLInputElement>) => {
   const lowPct = ((low - min) / (max - min)) * 100;
   const highPct = ((high - min) / (max - min)) * 100;
 
+  // Whether the slider should render as "active"/selected (blue) vs the
+  // default grey. This reflects whether a filter is actually applied, not
+  // thumb position — sliding both thumbs out to the full bounds is a valid
+  // applied selection (min–max) and should stay blue, not fall back to
+  // grey. Only the explicit Clear action (which unmounts/resets this back
+  // to the unapplied default) should make it grey again. Falls back to the
+  // old position-based check if the parent doesn't pass `active`.
+  const isActive = active ?? (low > min || high < max);
+
   // The two thumbs are separate, fully-overlapping <input type="range">
   // elements. Whichever renders second normally sits on top and "wins" any
   // click where the thumbs are close together or overlapping — which makes
@@ -66,7 +82,7 @@ const handleHigh = (e: React.ChangeEvent<HTMLInputElement>) => {
   const lowOnTop = low > midpoint;
 
   return (
-    <div className="range-filter">
+    <div className={`range-filter${isActive ? " range-filter--active" : ""}`}>
       <div className="range-filter__values">
         <span>
           {format(low)}

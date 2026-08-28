@@ -452,14 +452,14 @@ export default function FilterSidebar({
 
     const [low, high] = next;
 
-    if (low <= bounds.min && high >= bounds.max) {
-      clear(slug);
-    } else {
-      update(slug, {
-        min: low,
-        max: high,
-      });
-    }
+    // Dragging back out to the full min/max bounds should NOT reset/clear
+    // the filter — it should just apply a range that happens to equal the
+    // full bounds (still shown as active/selected). The only way to
+    // actually remove the filter is the explicit "Clear" action.
+    update(slug, {
+      min: low,
+      max: high,
+    });
   };
 
   const resetRangeUi = (attr: FilterAttribute) => {
@@ -779,6 +779,7 @@ export default function FilterSidebar({
                               numberType={
                                 attr.numberType ?? undefined
                               }
+                              active={current !== undefined}
                               onChange={(next) =>
                                 updateRange(
                                   attr.slug,

@@ -13,6 +13,7 @@ export interface FilterOption {
   displayName: string;
 }
 
+
 export type FilterType =
   | "checkbox"
   | "toggle"

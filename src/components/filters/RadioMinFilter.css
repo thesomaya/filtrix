@@ -1,0 +1,98 @@
+.radio-min-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radio-min-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #1a2332;
+  transition: background-color 0.15s ease;
+}
+
+.radio-min-filter__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The actual radio dot — only ever "filled" for the exact picked option */
+.radio-min-filter__dot {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid #cfd6e2;
+  background: #ffffff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.radio-min-filter__input:checked + .radio-min-filter__dot {
+  border-color: #2f6fed;
+  background: #2f6fed;
+}
+
+.radio-min-filter__input:checked + .radio-min-filter__dot::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+/* Options above the pick: not the radio choice itself, but included in
+   the match — shown as a soft-filled row with a small checkmark dot,
+   clearly different from both the picked radio and the untouched ones
+   below it. */
+.radio-min-filter__option--included {
+  background: #eef3ff;
+}
+
+.radio-min-filter__option--included .radio-min-filter__dot {
+  border-color: #b9caf7;
+}
+
+.radio-min-filter__check {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a9c0f5;
+}
+
+.radio-min-filter__option:hover .radio-min-filter__dot {
+  border-color: #2f6fed;
+}
+
+.radio-min-filter__text {
+  line-height: 1.3;
+  flex: 1;
+}
+
+.radio-min-filter__badge {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2f6fed;
+  background: #dde7ff;
+  padding: 2px 7px;
+  border-radius: 999px;
+}

@@ -5,6 +5,8 @@ import RadioFilter from "./RadioFilter";
 import RangeFilter from "./RangeFilter";
 import ToggleFilter from "./ToggleFilter";
 import TextFilter from "./TextFilter";
+import ExcludeFilter from "./ExcludeFilter";
+import RadioMinFilter from "./RadioMinFilter";
 import "./FilterSidebar.css";
 import { API_BASE } from "../../config";
 
@@ -14,12 +16,8 @@ export interface FilterOption {
 }
 
 export type FilterType =
-  | "checkbox"
-  | "toggle"
-  | "radio"
-  | "intersection"
-  | "text"
-  | "range";
+  | "checkbox" | "toggle" | "radio" | "intersection" | "text" | "range"
+  | "range_inverted" | "radio_min" | "toggle_exclude";
 
 export type VisibilityOperator =
   | "equals"
@@ -62,7 +60,7 @@ export interface FilterGroup {
 
 export type FilterValues = Record<
   string,
-  boolean | string | string[] | { min: number; max: number }
+  boolean | string | string[] | { min?: number; max?: number }
 >;
 
 export interface FilterSidebarProps {
@@ -516,6 +514,22 @@ export default function FilterSidebar({
     onRemove: () => void;
   };
 
+  const updateRangeInverted = (attr: FilterAttribute, next: [number, number]) => {
+  setRangeUi((prev) => ({ ...prev, [attr.slug]: next }));
+  const [low, high] = next;
+  const range = attr.range!;
+
+  const filterValue: { min?: number; max?: number } = {};
+  if (low > range.min) filterValue.min = low;
+  if (high < range.max) filterValue.max = high;
+
+  if (filterValue.min === undefined && filterValue.max === undefined) {
+    clear(attr.slug);
+  } else {
+    update(attr.slug, filterValue);
+  }
+};
+
   const activeChips: ActiveChip[] = [];
 
   Object.entries(values).forEach(([slug, value]) => {
@@ -523,25 +537,45 @@ export default function FilterSidebar({
     if (!attr) return;
     if (!isAttributeVisible(attr, values, attrById)) return;
 
-    if (attr.filterType === "toggle" && typeof value === "boolean") {
+    if (
+      (attr.filterType === "toggle" || attr.filterType === "toggle_exclude") &&
+      typeof value === "boolean"
+    ) {
       activeChips.push({
         id: slug,
-        label: attr.name,
+        label: attr.filterType === "toggle_exclude" ? `No ${attr.name}` : attr.name,
         onRemove: () => updateToggle(slug, false),
       });
       return;
     }
 
-    if (attr.filterType === "radio" && typeof value === "string") {
-      const option = attr.options.find((o) => o.value === value);
+    if (
+        (attr.filterType === "radio" || attr.filterType === "radio_min") &&
+        typeof value === "string"
+      ) {
+        const option = attr.options.find((o) => o.value === value);
+        const label = option ? option.displayName : value;
 
-      activeChips.push({
-        id: slug,
-        label: option ? option.displayName : value,
-        onRemove: () => updateRadio(slug, ""),
-      });
+        activeChips.push({
+          id: slug,
+          label: attr.filterType === "radio_min" ? `${label} & above` : label,
+          onRemove: () => updateRadio(slug, ""),
+        });
 
-      return;
+        return;
+      }
+
+    if (attr.filterType === "range_inverted" && value && !Array.isArray(value) && typeof value === "object") {
+      const v = value as { min?: number; max?: number };
+      const unit = attr.unit ? ` ${attr.unit}` : "";
+      const label =
+        v.min !== undefined && v.max !== undefined
+          ? `${attr.name}: outside ${v.min}–${v.max}${unit}`
+          : v.min !== undefined
+            ? `${attr.name}: ${v.min}${unit} & below`
+            : `${attr.name}: ${v.max}${unit} & above`;
+
+      activeChips.push({ id: slug, label, onRemove: () => { clear(slug); resetRangeUi(attr); } });
     }
 
     if (attr.filterType === "text" && typeof value === "string") {
@@ -748,6 +782,18 @@ export default function FilterSidebar({
                           </div>
                         );
 
+                      case "toggle_exclude":
+                        return (
+                          <div key={attr.slug}>
+                            <ExcludeFilter
+                              label={attr.name}
+                              checked={Boolean(current)}
+                              onChange={(next) => updateToggle(attr.slug, next)}
+                            />
+                          </div>
+                        );
+
+
                       case "range": {
                         if (!attr.range) return null;
 
@@ -787,33 +833,62 @@ export default function FilterSidebar({
                         );
                       }
 
+                      case "range_inverted": {
+                        if (!attr.range) return null;
+                        const value = rangeUi[attr.slug] ?? [attr.range.min, attr.range.max];
+
+                        return (
+                          <div key={attr.slug}>
+                            {renderLabel(
+                              attr,
+                              "min & below / max & above",
+                              current !== undefined
+                                ? () => { clear(attr.slug); resetRangeUi(attr); }
+                                : undefined,
+                            )}
+                            <RangeFilter
+                              min={attr.range.min}
+                              max={attr.range.max}
+                              value={value}
+                              unit={attr.unit ?? undefined}
+                              numberType={attr.numberType ?? undefined}
+                              active={current !== undefined}
+                              onChange={(next) => updateRangeInverted(attr, next)}
+                            />
+                          </div>
+                        );
+                      }
+
                       case "radio":
                         return (
                           <div key={attr.slug}>
                             {renderLabel(
                               attr,
                               undefined,
-                              current !== undefined
-                                ? () =>
-                                    updateRadio(
-                                      attr.slug,
-                                      "",
-                                    )
-                                : undefined,
+                              current !== undefined ? () => updateRadio(attr.slug, "") : undefined,
                             )}
-
                             <RadioFilter
                               name={attr.slug}
-                              options={attr.options.map((o) => ({
-                                value: o.value,
-                                label: o.displayName,
-                              }))}
-                              selected={
-                                (current as string) ?? null
-                              }
-                              onChange={(next) =>
-                                updateRadio(attr.slug, next)
-                              }
+                              options={attr.options.map((o) => ({ value: o.value, label: o.displayName }))}
+                              selected={(current as string) ?? null}
+                              onChange={(next) => updateRadio(attr.slug, next)}
+                            />
+                          </div>
+                        );
+
+                      case "radio_min":
+                        return (
+                          <div key={attr.slug}>
+                            {renderLabel(
+                              attr,
+                              undefined,
+                              current !== undefined ? () => updateRadio(attr.slug, "") : undefined,
+                            )}
+                            <RadioMinFilter
+                              name={attr.slug}
+                              options={attr.options.map((o) => ({ value: o.value, label: o.displayName }))}
+                              selected={(current as string) ?? null}
+                              onChange={(next) => updateRadio(attr.slug, next)}
                             />
                           </div>
                         );

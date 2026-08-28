@@ -1,0 +1,73 @@
+.exclude-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.exclude-filter__label {
+  font-size: 0.88rem;
+  color: #2b2f45;
+}
+
+.exclude-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.exclude-filter__option input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.exclude-filter__box {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid #cfd4e6;
+  background: #ffffff;
+  flex: 0 0 auto;
+  position: relative;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+/* Red/amber accent when checked — deliberately different from the blue
+   used everywhere else, since this is a negative/exclusion filter and
+   should read visually distinct from a normal "include" selection. */
+.exclude-filter__option input:checked + .exclude-filter__box {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.exclude-filter__option input:checked + .exclude-filter__box::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.exclude-filter__option input:focus-visible + .exclude-filter__box {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.exclude-filter__text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.exclude-filter__option input:checked ~ .exclude-filter__text {
+  color: #ef4444;
+}

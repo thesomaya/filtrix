@@ -58,3 +58,13 @@
 .intersection-filter__label {
   line-height: 1.3;
 }
+
+.intersection-filter__option--disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.intersection-filter__option--disabled .intersection-filter__box {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}

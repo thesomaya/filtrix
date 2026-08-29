@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import CheckboxFilter from "./CheckboxFilter";
+import IntersectionFilter from "./IntersectionFilter"
 import RadioFilter from "./RadioFilter";
 import RangeFilter from "./RangeFilter";
 import ToggleFilter from "./ToggleFilter";
@@ -49,6 +50,7 @@ export interface FilterAttribute {
   range: { min: number; max: number } | null;
   options: FilterOption[];
   visibilityRules?: AttributeVisibilityRule[];
+  maxSelections?: number | null;
 }
 
 export interface FilterGroup {
@@ -934,21 +936,13 @@ export default function FilterSidebar({
                                 : undefined,
                             )}
 
-                            <CheckboxFilter
-                              options={attr.options.map((o) => ({
-                                value: o.value,
-                                label: o.displayName,
-                              }))}
-                              selected={
-                                (current as string[]) ?? []
-                              }
-                              onChange={(next) =>
-                                updateCheckbox(
-                                  attr.slug,
-                                  next,
-                                )
-                              }
+                            <IntersectionFilter
+                              options={attr.options.map((o) => ({ value: o.value, label: o.displayName }))}
+                              selected={(current as string[]) ?? []}
+                              maxSelections={attr.maxSelections}
+                              onChange={(next) => updateCheckbox(attr.slug, next)}
                             />
+                            
                           </div>
                         );
 

@@ -5,6 +5,7 @@ export interface ProductCardProps {
   image?: string;
   title: string;
   details?: string[];
+  productUrl?: string;
   onClick?: () => void;
   compareSelected?: boolean;
   onToggleCompare?: (id: string) => void;
@@ -18,48 +19,66 @@ export default function ProductCard({
   details = [],
   onClick,
   compareSelected = false,
+  productUrl = `/products/${id}`,
   onToggleCompare,
   compareDisabled = false,
 }: ProductCardProps) {
   return (
-    <article className="product-card" onClick={onClick}>
-      <div className="product-card__image-wrap">
-        {onToggleCompare && (
-          <label
-            className="product-card__compare"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <input
-              type="checkbox"
-              checked={compareSelected}
-              disabled={compareDisabled && !compareSelected}
-              onChange={() => onToggleCompare(id)}
+    <article className="product-card">
+      {/* Wrapper anchor to handle new tab navigation */}
+      <a
+        href={productUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="product-card__link"
+        onClick={(e) => {
+          if (onClick) {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+      >
+        <div className="product-card__image-wrap">
+          {onToggleCompare && (
+            <label
+              className="product-card__compare"
+              onClick={(e) => {
+                // Prevent clicking the checkbox from triggering the link
+                e.stopPropagation();
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={compareSelected}
+                disabled={compareDisabled && !compareSelected}
+                onChange={() => onToggleCompare(id)}
+              />
+              Compare
+            </label>
+          )}
+
+          {image ? (
+            <img src={image} alt={title} className="product-card__image" />
+          ) : (
+            <div
+              className="product-card__image product-card__image--placeholder"
+              aria-hidden="true"
             />
-            Compare
-          </label>
-        )}
+          )}
+        </div>
 
-        {image ? (
-          <img src={image} alt={title} className="product-card__image" />
-        ) : (
-          <div
-            className="product-card__image product-card__image--placeholder"
-            aria-hidden="true"
-          />
-        )}
-      </div>
-
-      <div className="product-card__body">
-        <h3 className="product-card__title">{title}</h3>
-        <div className="product-card__divider" aria-hidden="true" />
-        <ul className="product-card__details">
-          {details.map((detail) => (
-            <li key={detail} className="product-card__detail">
-              {detail}
-            </li>
-          ))}
-        </ul>
-      </div>
+        <div className="product-card__body">
+          <h3 className="product-card__title">{title}</h3>
+          <div className="product-card__divider" aria-hidden="true" />
+          <ul className="product-card__details">
+            {details.map((detail) => (
+              <li key={detail} className="product-card__detail">
+                {detail}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </a>
     </article>
   );
 }

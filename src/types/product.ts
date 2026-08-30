@@ -1,7 +1,7 @@
 export interface ApiAttribute {
   id: string;
   name: string;
-  value: string | number | boolean;
+  value: string | number | boolean | { min: number; max: number } | string[] | null;
   unit: string;
 
 }

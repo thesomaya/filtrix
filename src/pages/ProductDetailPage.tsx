@@ -47,6 +47,24 @@ function formatSpecValue(attr: ApiAttribute): string {
   return unit ? `${value} ${unit}` : String(value);
 }
 
+// Builds a placeholder attribute for a definition the product has no value
+// for — same shape as a real ApiAttribute, just with value: null (which
+// formatSpecValue already renders as "—").
+function placeholderAttribute(def: FilterGroup["attributes"][number]): ApiAttribute {
+  return {
+    id: def.id,
+    name: def.name,
+    description: def.description ?? null,
+    value: null,
+    minValue: null,
+    maxValue: null,
+    unit: def.unit ?? null,
+    filterType: def.filterType,
+    visibilityRules: def.visibilityRules ?? [],
+    options: [],
+  } as ApiAttribute;
+}
+
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -140,34 +158,32 @@ export default function ProductDetailPage() {
 
   const images = product.images ?? [];
   const attributes = product.attributes ?? [];
-  const selected = isSelected(product.id);
-  const specGroups: SpecGroup[] = [];
-  const unmatched: ApiAttribute[] = [];
 
-  for (const attr of attributes) {
-    const group = attributeGroups.find((g) =>
-      g.attributes.some((a) => a.id === attr.id || a.name === attr.name),
-    );
+  // Every attribute definition for this category should show up in the
+  // spec table, whether or not this specific product has a value for it —
+  // build the groups from attributeGroups (the full category schema), and
+  // fill in the product's actual value where one exists, or a "—"
+  // placeholder where it doesn't.
+  const attrById = new Map(attributes.map((a) => [a.id, a]));
 
-    if (!group) {
-      unmatched.push(attr);
-      continue;
-    }
+  const specGroups: SpecGroup[] = attributeGroups
+    .map((group) => ({
+      id: group.id,
+      name: group.name,
+      sortOrder: group.sortOrder,
+      attributes: group.attributes.map(
+        (def) => attrById.get(def.id) ?? placeholderAttribute(def),
+      ),
+    }))
+    .sort((a, b) => a.sortOrder - b.sortOrder);
 
-    let bucket = specGroups.find((g) => g.id === group.id);
-    if (!bucket) {
-      bucket = {
-        id: group.id,
-        name: group.name,
-        sortOrder: group.sortOrder,
-        attributes: [],
-      };
-      specGroups.push(bucket);
-    }
-    bucket.attributes.push(attr);
-  }
-
-  specGroups.sort((a, b) => a.sortOrder - b.sortOrder);
+  // Rare edge case: a product attribute that doesn't belong to any group
+  // returned for this category (e.g. stale data, or a category mismatch).
+  // Keep it visible instead of silently dropping it.
+  const knownDefIds = new Set(
+    attributeGroups.flatMap((g) => g.attributes.map((a) => a.id)),
+  );
+  const unmatched = attributes.filter((a) => !knownDefIds.has(a.id));
 
   if (unmatched.length > 0) {
     specGroups.push({
@@ -177,6 +193,8 @@ export default function ProductDetailPage() {
       attributes: unmatched,
     });
   }
+
+  const selected = isSelected(product.id);
 
   return (
     <div className="product-detail">

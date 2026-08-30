@@ -1,0 +1,132 @@
+.range-filter-inverted {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.range-filter-inverted__values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #a3a8bd; /* muted until a threshold is actually picked */
+}
+
+.range-filter-inverted--active .range-filter-inverted__values {
+  color: #10162f;
+}
+
+.range-filter-inverted__track-wrap {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+/* Each half owns exactly 50% of the track, meeting in the middle at the
+   zero mark — so zero is always visually centered regardless of how
+   asymmetric min/max are (e.g. -60 to +90). */
+.range-filter-inverted__half {
+  position: relative;
+  width: 50%;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.range-filter-inverted__track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: #e6e9f2;
+}
+
+.range-filter-inverted__half--left .range-filter-inverted__track {
+  border-radius: 2px 0 0 2px;
+}
+
+.range-filter-inverted__half--right .range-filter-inverted__track {
+  border-radius: 0 2px 2px 0;
+}
+
+/* Filled = an actively excluded/included zone, growing outward from the
+   center toward that half's outer edge. */
+.range-filter-inverted__fill {
+  position: absolute;
+  height: 4px;
+  border-radius: 2px;
+  background: #3b5bff;
+}
+
+.range-filter-inverted__center-mark {
+  width: 2px;
+  height: 10px;
+  background: #cbd0e0;
+  border-radius: 1px;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.range-filter-inverted__input {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range-filter-inverted__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #b7bcd6;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.15s ease;
+}
+
+.range-filter-inverted__input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #b7bcd6;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.15s ease;
+}
+
+.range-filter-inverted--active .range-filter-inverted__input::-webkit-slider-thumb {
+  border-color: #3b5bff;
+}
+
+.range-filter-inverted--active .range-filter-inverted__input::-moz-range-thumb {
+  border-color: #3b5bff;
+}
+
+.range-filter-inverted__input::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.range-filter-inverted__input:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid #3b5bff;
+  outline-offset: 2px;
+}
+
+.range-filter-inverted__bounds {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #c2c6d6;
+}
+
+.range-filter-inverted__zero {
+  color: #a3a8bd;
+}

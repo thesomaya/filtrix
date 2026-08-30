@@ -4,10 +4,13 @@ import CheckboxFilter from "./CheckboxFilter";
 import IntersectionFilter from "./IntersectionFilter"
 import RadioFilter from "./RadioFilter";
 import RangeFilter from "./RangeFilter";
+import RangeFilterInverted from "./RangeFilterInverted";
 import ToggleFilter from "./ToggleFilter";
 import TextFilter from "./TextFilter";
 import ExcludeFilter from "./ExcludeFilter";
 import RadioMinFilter from "./RadioMinFilter";
+import RadioAltFilter from "./RadioAltFilter";
+import CheckboxMinFilter from "./CheckboxMinFilter";
 import "./FilterSidebar.css";
 import { API_BASE } from "../../config";
 
@@ -18,7 +21,7 @@ export interface FilterOption {
 
 export type FilterType =
   | "checkbox" | "toggle" | "radio" | "intersection" | "text" | "range"
-  | "range_inverted" | "radio_min" | "toggle_exclude";
+  | "range_inverted" | "radio_min" | "toggle_exclude" | "radio_alt"  | "checkbox_min";
 
 export type VisibilityOperator =
   | "equals"
@@ -89,13 +92,13 @@ function compareValues(
       if (Array.isArray(actual)) return actual.includes(expected);
       return String(actual ?? "")
         .toLowerCase()
-        .includes(expected.toLowerCase());
+        .includes(String(expected ?? "").toLowerCase());
 
     case "not_contains":
       if (Array.isArray(actual)) return !actual.includes(expected);
       return !String(actual ?? "")
         .toLowerCase()
-        .includes(expected.toLowerCase());
+        .includes(String(expected ?? "").toLowerCase());
 
     case "greater_than":
     case "greater_than_or_equal":
@@ -126,14 +129,23 @@ function isAttributeVisible(
 ): boolean {
   if (!attr.visibilityRules || attr.visibilityRules.length === 0) return true;
 
-  return attr.visibilityRules.every((rule) => {
-    const dependsOn = attrById.get(rule.dependsOnAttributeId);
+  const byDependency = new Map<string, AttributeVisibilityRule[]>();
+  attr.visibilityRules.forEach((rule) => {
+    const list = byDependency.get(rule.dependsOnAttributeId) ?? [];
+    list.push(rule);
+    byDependency.set(rule.dependsOnAttributeId, list);
+  });
+
+  // Across different dependencies: AND.
+  // Within the same dependency (multiple allowed values): OR.
+  return Array.from(byDependency.entries()).every(([dependsOnId, rules]) => {
+    const dependsOn = attrById.get(dependsOnId);
     if (!dependsOn) return true;
 
     const actual = values[dependsOn.slug];
     if (actual === undefined) return false;
 
-    return compareValues(rule.operator, actual, rule.value);
+    return rules.some((rule) => compareValues(rule.operator, actual, rule.value));
   });
 }
 
@@ -198,7 +210,8 @@ const renderLabel = (
   hint?: string,
   onClear?: () => void,
 ) => {
-  const labelText = attr.unit ? `${attr.name} (${attr.unit})` : attr.name;
+  //const labelText = attr.unit ? `${attr.name} (${attr.unit})` : attr.name;
+  const labelText = attr.name;
 
   return (
     <div className="filter-sidebar__label-container">
@@ -465,7 +478,10 @@ export default function FilterSidebar({
     if (attr.range) {
       setRangeUi((prev) => ({
         ...prev,
-        [attr.slug]: [attr.range!.min, attr.range!.max],
+        [attr.slug]:
+          attr.filterType === "range_inverted"
+            ? [0, 0]
+            : [attr.range!.min, attr.range!.max],
       }));
     }
   };
@@ -517,19 +533,37 @@ export default function FilterSidebar({
   };
 
   const updateRangeInverted = (attr: FilterAttribute, next: [number, number]) => {
-  setRangeUi((prev) => ({ ...prev, [attr.slug]: next }));
-  const [low, high] = next;
-  const range = attr.range!;
+    setRangeUi((prev) => ({ ...prev, [attr.slug]: next }));
+    const [low, high] = next;
 
-  const filterValue: { min?: number; max?: number } = {};
-  if (low > range.min) filterValue.min = low;
-  if (high < range.max) filterValue.max = high;
+    // low <= 0 is the "min & below" threshold, high >= 0 is the "max &
+    // above" threshold. 0 on either side means that side hasn't been
+    // dragged away from the (centered) default and is therefore unset.
+    const filterValue: { min?: number; max?: number } = {};
+    if (low < 0) filterValue.min = low;
+    if (high > 0) filterValue.max = high;
 
-  if (filterValue.min === undefined && filterValue.max === undefined) {
-    clear(attr.slug);
-  } else {
-    update(attr.slug, filterValue);
-  }
+    if (filterValue.min === undefined && filterValue.max === undefined) {
+      clear(attr.slug);
+    } else {
+      update(attr.slug, filterValue);
+    }
+  };
+
+// Tri-state setter for toggle_exclude: true = Yes, false = No, undefined =
+// no filter. Unlike updateToggle, `false` here is a real selected value and
+// must NOT be treated as "clear" — only undefined removes the filter key.
+const updateExclude = (slug: string, next: boolean | undefined) => {
+  setValues((prev) => {
+    const updated = { ...prev };
+    if (next === undefined) {
+      delete updated[slug];
+    } else {
+      updated[slug] = next;
+    }
+    onChange(updated);
+    return updated;
+  });
 };
 
   const activeChips: ActiveChip[] = [];
@@ -552,7 +586,7 @@ export default function FilterSidebar({
     }
 
     if (
-        (attr.filterType === "radio" || attr.filterType === "radio_min") &&
+        (attr.filterType === "radio" || attr.filterType === "radio_min" || attr.filterType === "radio_alt") &&
         typeof value === "string"
       ) {
         const option = attr.options.find((o) => o.value === value);
@@ -590,25 +624,43 @@ export default function FilterSidebar({
       return;
     }
 
+    if (attr.filterType === "checkbox_min" && Array.isArray(value) && value.length > 0) {
+        // The picked value is whichever option has the lowest sortOrder
+        // among everything in the expanded set.
+        const indices = value
+          .map((v) => attr.options.findIndex((o) => o.value === v))
+          .filter((i) => i !== -1);
+        const pickedIndex = Math.min(...indices);
+        const picked = attr.options[pickedIndex];
+        const label = picked ? picked.displayName : value[0];
+
+        activeChips.push({
+          id: slug,
+          label: `${label} & above`,
+          onRemove: () => updateCheckbox(slug, []),
+        });
+
+        return;
+      }
+
     if (
       (attr.filterType === "checkbox" ||
         attr.filterType === "intersection") &&
       Array.isArray(value)
     ) {
       value.forEach((optionValue) => {
-        const option = attr.options.find(
-          (o) => o.value === optionValue,
-        );
+        const option = attr.options.find((o) => o.value === optionValue);
+        const baseLabel = option ? option.displayName : optionValue;
+        const label =
+          attr.filterType === "checkbox_min" ? `${baseLabel} & above` : baseLabel;
 
         activeChips.push({
           id: `${slug}:${optionValue}`,
-          label: option ? option.displayName : optionValue,
+          label,
           onRemove: () =>
             updateCheckbox(
               slug,
-              (values[slug] as string[]).filter(
-                (v) => v !== optionValue,
-              ),
+              (values[slug] as string[]).filter((v) => v !== optionValue),
             ),
         });
       });
@@ -656,7 +708,7 @@ export default function FilterSidebar({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, []);
+  }, [loading, groups.length]);
 
   useEffect(() => {
     const element = activeFiltersRef.current;
@@ -680,7 +732,7 @@ export default function FilterSidebar({
 
   if (loading) {
     return (
-      <aside className="filter-sidebar">
+      <aside ref={sidebarRef} className="filter-sidebar">
         <p className="filter-sidebar__loading">
           Loading filters...
         </p>
@@ -690,7 +742,7 @@ export default function FilterSidebar({
 
   if (groups.length === 0) {
     return (
-      <aside className="filter-sidebar">
+      <aside ref={sidebarRef} className="filter-sidebar">
         <div className="filter-sidebar__header">
           <h2 className="filter-sidebar__title">Filters</h2>
         </div>
@@ -785,15 +837,15 @@ export default function FilterSidebar({
                         );
 
                       case "toggle_exclude":
-                        return (
-                          <div key={attr.slug}>
-                            <ExcludeFilter
-                              label={attr.name}
-                              checked={Boolean(current)}
-                              onChange={(next) => updateToggle(attr.slug, next)}
-                            />
-                          </div>
-                        );
+                          return (
+                            <div key={attr.slug}>
+                              <ExcludeFilter
+                                label={attr.name}
+                                value={typeof current === "boolean" ? current : undefined}
+                                onChange={(next) => updateExclude(attr.slug, next)}
+                              />
+                            </div>
+                          );
 
 
                       case "range": {
@@ -837,21 +889,21 @@ export default function FilterSidebar({
 
                       case "range_inverted": {
                         if (!attr.range) return null;
-                        const value = rangeUi[attr.slug] ?? [attr.range.min, attr.range.max];
+                        const value = rangeUi[attr.slug] ?? [0, 0];
 
                         return (
                           <div key={attr.slug}>
                             {renderLabel(
                               attr,
-                              "min & below / max & above",
+                              undefined,
                               current !== undefined
                                 ? () => { clear(attr.slug); resetRangeUi(attr); }
                                 : undefined,
                             )}
-                            <RangeFilter
+                            <RangeFilterInverted
                               min={attr.range.min}
                               max={attr.range.max}
-                              value={value}
+                              value={value as [number, number]}
                               unit={attr.unit ?? undefined}
                               numberType={attr.numberType ?? undefined}
                               active={current !== undefined}
@@ -860,6 +912,23 @@ export default function FilterSidebar({
                           </div>
                         );
                       }
+
+                      case "radio_alt":
+                        return (
+                          <div key={attr.slug}>
+                            {renderLabel(
+                              attr,
+                              undefined,
+                              current !== undefined ? () => updateRadio(attr.slug, "") : undefined,
+                            )}
+                            <RadioAltFilter
+                              name={attr.slug}
+                              options={attr.options.map((o) => ({ value: o.value, label: o.displayName }))}
+                              selected={(current as string) ?? null}
+                              onChange={(next) => updateRadio(attr.slug, next)}
+                            />
+                          </div>
+                        );
 
                       case "radio":
                         return (
@@ -945,7 +1014,25 @@ export default function FilterSidebar({
                             
                           </div>
                         );
-
+                      
+                        case "checkbox_min":
+                            return (
+                              <div key={attr.slug}>
+                                {renderLabel(
+                                  attr,
+                                  undefined,
+                                  Array.isArray(current) && current.length > 0
+                                    ? () => updateCheckbox(attr.slug, [])
+                                    : undefined,
+                                )}
+                                <CheckboxMinFilter
+                                  options={attr.options.map((o) => ({ value: o.value, label: o.displayName }))}
+                                  selected={(current as string[]) ?? []}
+                                  onChange={(next) => updateCheckbox(attr.slug, next)}
+                                />
+                              </div>
+                            );
+                            
                       case "checkbox":
                       default:
                         return (
@@ -971,6 +1058,7 @@ export default function FilterSidebar({
                               selected={
                                 (current as string[]) ?? []
                               }
+                              maxSelections={attr.maxSelections}
                               onChange={(next) =>
                                 updateCheckbox(
                                   attr.slug,

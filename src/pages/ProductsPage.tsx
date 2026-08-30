@@ -45,9 +45,33 @@ function formatAttributeDetail(attr: ApiAttribute): string {
   return unit ? `${name}: ${value} ${unit}` : `${name}: ${value}`;
 }
 
+// True if this product's title matches the search text, OR its Brand
+// attribute value matches. Title matching is unchanged from before; brand
+// matching is what lets "xirgo" surface Xirgo products even when "xirgo"
+// isn't in the title itself (the brand filter checkbox also gets
+// auto-selected in FilterSidebar, so the backend already narrows results —
+// this client-side check just keeps things consistent while that filter
+// change round-trips).
+function matchesSearch(product: ApiProduct, searchLower: string): boolean {
+  if (!searchLower) return true;
+
+  if (product.title.toLowerCase().includes(searchLower)) return true;
+
+  const brandAttr = product.attributes?.find(
+    (attr) => attr.name.toLowerCase() === "brand",
+  );
+
+  if (brandAttr && typeof brandAttr.value === "string") {
+    return brandAttr.value.toLowerCase().includes(searchLower);
+  }
+
+  return false;
+}
+
 export default function ProductsPage() {
   const [searchParams] = useSearchParams();
   const categorySlug = searchParams.get("category");
+  const searchQuery = searchParams.get("search") ?? "";
   const navigate = useNavigate();
 
   const { categories } = useCategories();
@@ -58,7 +82,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [filters, setFilters] = useState<FilterValues>({});
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchQuery);
 
   useEffect(() => {
     loadProducts();
@@ -66,8 +90,8 @@ export default function ProductsPage() {
   }, [categorySlug, filters]);
 
   useEffect(() => {
-    setSearch("");
-  }, [categorySlug]);
+    setSearch(searchQuery);
+  }, [searchQuery]);
 
   async function loadProducts() {
     setLoading(true);
@@ -91,10 +115,9 @@ export default function ProductsPage() {
     }
   }
 
-  const visibleProducts = search.trim()
-    ? products.filter((p) =>
-        p.title.toLowerCase().includes(search.trim().toLowerCase()),
-      )
+  const searchLower = search.trim().toLowerCase();
+  const visibleProducts = searchLower
+    ? products.filter((p) => matchesSearch(p, searchLower))
     : products;
 
   return (
@@ -168,7 +191,12 @@ export default function ProductsPage() {
       </div>
 
       <div className="products-page__layout">
-        <FilterSidebar categorySlug={categorySlug} onChange={setFilters} productCount={loading ? undefined : visibleProducts.length}/>
+        <FilterSidebar
+          categorySlug={categorySlug}
+          onChange={setFilters}
+          productCount={loading ? undefined : visibleProducts.length}
+          searchQuery={search}
+        />
 
         <div className="products-page__grid">
           {!loading && visibleProducts.length === 0 && (
@@ -192,7 +220,6 @@ export default function ProductsPage() {
               details={(product.attributes ?? [])
                 .slice(0, 3)
                 .map(formatAttributeDetail)}
-              onClick={() => navigate(`/products/${product.id}`)}
               compareSelected={isSelected(product.id)}
               onToggleCompare={toggleCompare}
               compareDisabled={isFull}

@@ -72,6 +72,10 @@ export interface FilterSidebarProps {
   categorySlug?: string | null;
   onChange: (filters: FilterValues) => void;
   productCount?: number;
+  // Free-text search coming from the page's search box (e.g. Hero or the
+  // ProductsPage search input). When this matches a "brand" checkbox
+  // option, that brand is auto-selected as if the user had checked it.
+  searchQuery?: string;
 }
 
 function compareValues(
@@ -354,6 +358,7 @@ export default function FilterSidebar({
   categorySlug,
   onChange,
   productCount,
+  searchQuery = "",
 }: FilterSidebarProps) {
   const [groups, setGroups] = useState<FilterGroup[]>([]);
   const [rangeUi, setRangeUi] = useState<Record<string, [number, number]>>({});
@@ -368,6 +373,11 @@ export default function FilterSidebar({
     left: 0,
     width: 0,
   });
+
+  // Tracks the brand option value (if any) that was auto-selected on
+  // behalf of a search term, so we know it's safe to remove it again when
+  // the search changes — without touching brands the user picked by hand.
+  const autoBrandRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -392,6 +402,7 @@ export default function FilterSidebar({
           setGroups(data);
           setValues({});
           setRangeUi({});
+          autoBrandRef.current = null;
           onChange({});
         }
       } finally {
@@ -489,6 +500,7 @@ export default function FilterSidebar({
   const clearAll = () => {
     setValues({});
     setRangeUi({});
+    autoBrandRef.current = null;
     onChange({});
   };
 
@@ -501,6 +513,53 @@ export default function FilterSidebar({
       attrById.set(attr.id, attr);
     }),
   );
+
+  // Auto-select a brand checkbox option when the free-text search matches
+  // one of its option labels (e.g. searching "xirgo" checks the "Xirgo"
+  // brand filter), and un-check it again once the search no longer
+  // matches. Only ever touches the brand *this effect* selected — any
+  // brand the user checked manually is left alone.
+  useEffect(() => {
+    const brandAttr = attrBySlug.get("brand");
+    if (!brandAttr) return;
+
+    const query = searchQuery.trim().toLowerCase();
+    const current = (values.brand as string[] | undefined) ?? [];
+
+    const matched = query
+      ? brandAttr.options.find(
+          (option) =>
+            query.includes(option.displayName.toLowerCase()) ||
+            query.includes(option.value.toLowerCase()),
+        )
+      : undefined;
+
+    const matchedValue = matched?.value ?? null;
+
+    if (matchedValue === autoBrandRef.current) {
+      // Nothing changed from what we last auto-applied.
+      return;
+    }
+
+    let next = current;
+
+    // Remove whatever brand we previously auto-applied (if any).
+    if (autoBrandRef.current && next.includes(autoBrandRef.current)) {
+      next = next.filter((v) => v !== autoBrandRef.current);
+    }
+
+    // Add the newly matched brand, if it isn't already selected.
+    if (matchedValue && !next.includes(matchedValue)) {
+      next = [...next, matchedValue];
+    }
+
+    autoBrandRef.current = matchedValue;
+
+    if (next !== current) {
+      updateCheckbox("brand", next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, groups]);
 
   useEffect(() => {
     if (groups.length === 0) return;

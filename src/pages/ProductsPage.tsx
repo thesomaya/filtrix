@@ -45,27 +45,35 @@ function formatAttributeDetail(attr: ApiAttribute): string {
   return unit ? `${name}: ${value} ${unit}` : `${name}: ${value}`;
 }
 
-// True if this product's title matches the search text, OR its Brand
-// attribute value matches. Title matching is unchanged from before; brand
-// matching is what lets "xirgo" surface Xirgo products even when "xirgo"
-// isn't in the title itself (the brand filter checkbox also gets
-// auto-selected in FilterSidebar, so the backend already narrows results —
-// this client-side check just keeps things consistent while that filter
-// change round-trips).
+// True if every word in the search text is found somewhere on this
+// product — either in the title or in any attribute value (brand, color,
+// casing material, connectivity, etc). Splitting into words (rather than
+// matching the whole search string against one field) is what lets
+// "xirgo black" match a product whose title has neither word but whose
+// Brand attribute is "Xirgo" and Color attribute is "Black" — each word
+// can be satisfied by a different field.
 function matchesSearch(product: ApiProduct, searchLower: string): boolean {
   if (!searchLower) return true;
 
-  if (product.title.toLowerCase().includes(searchLower)) return true;
+  const words = searchLower.split(/\s+/).filter(Boolean);
 
-  const brandAttr = product.attributes?.find(
-    (attr) => attr.name.toLowerCase() === "brand",
+  const haystacks: string[] = [product.title.toLowerCase()];
+
+  (product.attributes ?? []).forEach((attr) => {
+    const { value } = attr;
+
+    if (value === null || value === undefined) return;
+
+    if (typeof value === "string") {
+      haystacks.push(value.toLowerCase());
+    } else if (Array.isArray(value)) {
+      value.forEach((v) => haystacks.push(String(v).toLowerCase()));
+    }
+  });
+
+  return words.every((word) =>
+    haystacks.some((haystack) => haystack.includes(word)),
   );
-
-  if (brandAttr && typeof brandAttr.value === "string") {
-    return brandAttr.value.toLowerCase().includes(searchLower);
-  }
-
-  return false;
 }
 
 export default function ProductsPage() {

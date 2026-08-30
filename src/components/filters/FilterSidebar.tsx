@@ -73,10 +73,27 @@ export interface FilterSidebarProps {
   onChange: (filters: FilterValues) => void;
   productCount?: number;
   // Free-text search coming from the page's search box (e.g. Hero or the
-  // ProductsPage search input). When this matches a "brand" checkbox
-  // option, that brand is auto-selected as if the user had checked it.
+  // ProductsPage search input). When this matches an option belonging to
+  // one of AUTO_SEARCH_SLUGS below, that option is auto-selected as if the
+  // user had checked it.
   searchQuery?: string;
 }
+
+// Checkbox-type attributes whose options should be auto-selected when the
+// free-text search matches one of their option labels. All of these are
+// expected to be `filterType: "checkbox"` attributes with single-value
+// option lists (one matching option picked per slug, same as brand).
+const AUTO_SEARCH_SLUGS = [
+  "brand",
+  "color",
+  "casing-material",
+  "mounting-option",
+  "connector-type",
+  "power-saving-options",
+  "connectivity",
+  "4g-type",
+  "module-name",
+];
 
 function compareValues(
   operator: VisibilityOperator,
@@ -374,10 +391,11 @@ export default function FilterSidebar({
     width: 0,
   });
 
-  // Tracks the brand option value (if any) that was auto-selected on
-  // behalf of a search term, so we know it's safe to remove it again when
-  // the search changes — without touching brands the user picked by hand.
-  const autoBrandRef = useRef<string | null>(null);
+  // Tracks, per attribute slug in AUTO_SEARCH_SLUGS, the option value (if
+  // any) that was auto-selected on behalf of a search term, so we know
+  // it's safe to remove it again when the search changes — without
+  // touching options the user picked by hand.
+  const autoAppliedRef = useRef<Record<string, string | null>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -402,7 +420,7 @@ export default function FilterSidebar({
           setGroups(data);
           setValues({});
           setRangeUi({});
-          autoBrandRef.current = null;
+          autoAppliedRef.current = {};
           onChange({});
         }
       } finally {
@@ -500,7 +518,7 @@ export default function FilterSidebar({
   const clearAll = () => {
     setValues({});
     setRangeUi({});
-    autoBrandRef.current = null;
+    autoAppliedRef.current = {};
     onChange({});
   };
 
@@ -514,49 +532,62 @@ export default function FilterSidebar({
     }),
   );
 
-  // Auto-select a brand checkbox option when the free-text search matches
-  // one of its option labels (e.g. searching "xirgo" checks the "Xirgo"
-  // brand filter), and un-check it again once the search no longer
-  // matches. Only ever touches the brand *this effect* selected — any
-  // brand the user checked manually is left alone.
+  // Auto-select checkbox options (brand, color, connectivity, etc.) when
+  // the free-text search matches one of their option labels — e.g.
+  // searching "xirgo" checks the "Xirgo" brand filter, "black metal" also
+  // checks "Black" (color) and "Metal" (casing material). Un-checks any
+  // such option again once the search no longer matches it. Only ever
+  // touches options *this effect* selected — anything the user checked
+  // manually is left alone. All matching slugs are applied in a single
+  // batched update so one search-text change triggers one product reload,
+  // not one per matched attribute.
   useEffect(() => {
-    const brandAttr = attrBySlug.get("brand");
-    if (!brandAttr) return;
-
     const query = searchQuery.trim().toLowerCase();
-    const current = (values.brand as string[] | undefined) ?? [];
+    const next: FilterValues = { ...values };
+    let changed = false;
 
-    const matched = query
-      ? brandAttr.options.find(
-          (option) =>
-            query.includes(option.displayName.toLowerCase()) ||
-            query.includes(option.value.toLowerCase()),
-        )
-      : undefined;
+    AUTO_SEARCH_SLUGS.forEach((slug) => {
+      const attr = attrBySlug.get(slug);
+      if (!attr) return;
 
-    const matchedValue = matched?.value ?? null;
+      const matched = query
+        ? attr.options.find(
+            (option) =>
+              query.includes(option.displayName.toLowerCase()) ||
+              query.includes(option.value.toLowerCase()),
+          )
+        : undefined;
 
-    if (matchedValue === autoBrandRef.current) {
-      // Nothing changed from what we last auto-applied.
-      return;
-    }
+      const matchedValue = matched?.value ?? null;
+      const prevAuto = autoAppliedRef.current[slug] ?? null;
 
-    let next = current;
+      if (matchedValue === prevAuto) return;
 
-    // Remove whatever brand we previously auto-applied (if any).
-    if (autoBrandRef.current && next.includes(autoBrandRef.current)) {
-      next = next.filter((v) => v !== autoBrandRef.current);
-    }
+      let current = (next[slug] as string[] | undefined) ?? [];
 
-    // Add the newly matched brand, if it isn't already selected.
-    if (matchedValue && !next.includes(matchedValue)) {
-      next = [...next, matchedValue];
-    }
+      // Remove whatever this slug's option we previously auto-applied.
+      if (prevAuto && current.includes(prevAuto)) {
+        current = current.filter((v) => v !== prevAuto);
+      }
 
-    autoBrandRef.current = matchedValue;
+      // Add the newly matched option, if it isn't already selected.
+      if (matchedValue && !current.includes(matchedValue)) {
+        current = [...current, matchedValue];
+      }
 
-    if (next !== current) {
-      updateCheckbox("brand", next);
+      autoAppliedRef.current[slug] = matchedValue;
+      changed = true;
+
+      if (current.length === 0) {
+        delete next[slug];
+      } else {
+        next[slug] = current;
+      }
+    });
+
+    if (changed) {
+      setValues(next);
+      onChange(next);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, groups]);

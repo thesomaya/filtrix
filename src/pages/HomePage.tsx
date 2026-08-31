@@ -22,7 +22,7 @@ export default function HomePage() {
             >
               <img
                 className="home__category-icon"
-                src={category.imageFileId || "public/3887847.png"}
+                src={category.file || "public/3887847.png"}
                 alt=""
                 aria-hidden="true"
               />

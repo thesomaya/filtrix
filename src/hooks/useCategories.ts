@@ -5,7 +5,7 @@ export interface Category {
   id: string;
   slug: string;
   name: string;
-  imageFileId: string;
+  file: string;
 }
 
 
